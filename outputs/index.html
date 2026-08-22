@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="button-polish.css" />
     <link rel="stylesheet" href="reference-structure.css" />
     <link rel="stylesheet" href="reference-exact.css" />
+    <link rel="stylesheet" href="navigation-structure.css" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -32,13 +33,13 @@
       </nav>
 
       <div class="sidebar-rule"></div>
-      <div class="nav-heading"><p class="eyebrow nav-label">Your playlists</p><div class="nav-actions"><button class="icon-button small" id="newPlaylist" aria-label="Create playlist">＋</button><button class="icon-button small" id="importShortcut" aria-label="Import playlists">↥</button></div></div>
-      <nav class="playlist-nav remote-playlists" id="remotePlaylists" aria-label="Imported YouTube playlists"></nav>
-      <p class="sidebar-empty" id="playlistEmpty">Connect Google to see your playlists.</p>
+      <div class="nav-heading"><p class="eyebrow nav-label">Your library</p><div class="nav-actions"><button class="icon-button small" id="newPlaylist" aria-label="Create playlist">＋</button></div></div>
+      <nav class="playlist-nav remote-playlists" id="remotePlaylists" aria-label="Your playlists"></nav>
+      <p class="sidebar-empty" id="playlistEmpty">Create a playlist to keep your favorites together.</p>
 
       <div class="sidebar-bottom">
-        <div class="sync-card"><span class="sync-dot"></span><span><strong id="syncTitle">Setup needed</strong><small id="syncSubtitle">Add your API key</small></span></div>
-        <button class="profile-button" id="settingsButton"><span class="avatar">H</span><span class="profile-copy"><strong>Music desk</strong><small id="connectionLabel">Not connected</small></span><span class="more">•••</span></button>
+        <div class="sync-card"><span class="sync-dot"></span><span><strong id="syncTitle">Local mode</strong><small id="syncSubtitle">Saved on this device</small></span></div>
+        <button class="profile-button" id="settingsButton"><span class="avatar">H</span><span class="profile-copy"><strong>Music desk</strong><small id="connectionLabel">Local library</small></span><span class="more">•••</span></button>
       </div>
     </aside>
 
@@ -50,7 +51,7 @@
       </header>
 
       <section class="browse-hero reveal">
-        <div><p class="eyebrow accent-label">LIVE CATALOG</p><h1>Browse the<br /><em>whole signal.</em></h1><p class="hero-copy">Search songs, artists, channels, and playlists from YouTube’s music catalog.</p></div>
+        <div><p class="eyebrow accent-label">YOUR DAILY SIGNAL</p><h1>Find your<br /><em>next loop.</em></h1><p class="hero-copy">Trending music, fresh discoveries, and the songs you keep coming back to.</p></div>
         <div class="hero-orbit" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><div class="orbit-core">♫</div><span class="orbit-note note-one">♪</span><span class="orbit-note note-two">·</span></div>
       </section>
 
@@ -80,7 +81,11 @@
 
       <section class="recommendations-panel" id="recommendationsPanel"><div class="section-heading"><div><p class="eyebrow">Based on your listening</p><h2>You might like</h2></div><button class="text-button" id="refreshRecommendations">Refresh <span>↻</span></button></div><div class="recommendation-list" id="recommendationList"><div class="recommendation-empty">Play or search for a track to get recommendations.</div></div></section>
 
-      <section class="library-panel" id="libraryPanel" hidden><div class="section-heading"><div><p class="eyebrow">Your library</p><h2>Saved for later</h2></div></div><div class="library-grid"><div><p class="eyebrow">Favorites</p><div id="favoritesList" class="saved-list"></div></div><div><p class="eyebrow">History</p><div id="historyList" class="saved-list"></div></div></div></section>
+      <section class="library-panel" id="libraryPanel" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Your library</p><h2>Your playlists</h2></div><button class="primary-button library-new-playlist" id="newPlaylistLibrary">＋ New playlist</button></div>
+        <div class="library-playlists" id="libraryPlaylists"></div>
+        <div class="library-grid"><div><p class="eyebrow">Favorites</p><div id="favoritesList" class="saved-list"></div></div><div><p class="eyebrow">History</p><div id="historyList" class="saved-list"></div></div></div>
+      </section>
     </main>
 
     <div class="player-bar" role="region" aria-label="Music player">
@@ -94,12 +99,9 @@
       <div class="settings-backdrop" data-close-settings></div>
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
         <button class="modal-close" id="settingsClose" aria-label="Close settings">×</button>
-        <p class="eyebrow accent-label">Private connection</p><h2 id="settingsTitle">Connect your music desk.</h2>
-        <p class="settings-intro">YouTube search is secured on the server. Only your Google OAuth client ID is entered here; the API key belongs in Vercel environment variables.</p>
-        <label class="field-label" for="clientIdInput">Google OAuth client ID</label><input class="settings-input" id="clientIdInput" type="text" placeholder="...apps.googleusercontent.com" autocomplete="off" />
-        <div class="settings-actions"><button class="secondary-button" id="saveSettings">Save credentials</button><button class="primary-button" id="connectGoogle">Connect Google</button></div>
-        <button class="import-button" id="importPlaylists">Import my YouTube playlists</button><p class="settings-status" id="settingsStatus">Not connected yet.</p>
-        <details class="setup-details"><summary>Where do I get these?</summary><p>Create a Google Cloud project, enable YouTube Data API v3, create a restricted API key, then create a Web OAuth client with this page’s origin as an allowed JavaScript origin.</p></details>
+        <p class="eyebrow accent-label">Local library</p><h2 id="settingsTitle">Your music desk, close by.</h2>
+        <p class="settings-intro">Your playlists, queue, favorites, notes, and listening history are saved in this browser. Search and playback use the official YouTube player.</p>
+        <p class="settings-status" id="settingsStatus">Local mode is ready.</p>
       </section>
     </div>
     <div class="settings-modal" id="playlistPicker" hidden>
@@ -111,6 +113,10 @@
         <div class="playlist-picker-list" id="playlistPickerList"></div>
         <div class="new-playlist-inline"><input class="settings-input" id="newPlaylistName" type="text" placeholder="Create a new playlist" /><button class="primary-button" id="createPlaylistFromPicker">Create</button></div>
       </section>
+    </div>
+    <div class="track-menu" id="trackMenu" hidden>
+      <button class="track-menu-item" id="menuAddPlaylist">＋ Add to playlist</button>
+      <button class="track-menu-item" id="menuAddQueue">↗ Add to queue</button>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="app.js"></script>
