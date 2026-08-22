@@ -4,12 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101110" />
-    <title>Lowkey — your private music desk</title>
+    <title>Lowkey — YouTube music desk</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="extra.css" />
+    <link rel="stylesheet" href="final.css" />
+    <link rel="stylesheet" href="mobile.css" />
+    <link rel="stylesheet" href="features.css" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -19,88 +22,94 @@
       <div class="brand"><span class="brand-mark">◒</span><span>lowkey</span></div>
       <p class="eyebrow nav-label">Your space</p>
       <nav class="primary-nav">
-        <button class="nav-item active" data-view="home"><span class="nav-icon">⌂</span>Home</button>
-        <button class="nav-item" data-view="browse"><span class="nav-icon">◌</span>Browse</button>
+        <button class="nav-item" data-view="home"><span class="nav-icon">⌂</span>Home</button>
+        <button class="nav-item active" data-view="browse"><span class="nav-icon">◌</span>Browse</button>
         <button class="nav-item" data-view="library"><span class="nav-icon">▣</span>Library</button>
       </nav>
 
       <div class="sidebar-rule"></div>
-        <div class="nav-heading"><p class="eyebrow nav-label">Playlists</p><button class="icon-button small" id="newPlaylist" aria-label="Create playlist">＋</button></div>
-      <nav class="playlist-nav" aria-label="Playlists">
-        <button class="playlist-link" data-playlist="Late night coding"><span class="playlist-dot coral"></span>Late night coding</button>
-        <button class="playlist-link" data-playlist="Sunday reset"><span class="playlist-dot yellow"></span>Sunday reset</button>
-        <button class="playlist-link" data-playlist="The long way home"><span class="playlist-dot blue"></span>The long way home</button>
-      </nav>
+      <div class="nav-heading"><p class="eyebrow nav-label">Your playlists</p><div class="nav-actions"><button class="icon-button small" id="newPlaylist" aria-label="Create playlist">＋</button><button class="icon-button small" id="importShortcut" aria-label="Import playlists">↥</button></div></div>
       <nav class="playlist-nav remote-playlists" id="remotePlaylists" aria-label="Imported YouTube playlists"></nav>
+      <p class="sidebar-empty" id="playlistEmpty">Connect Google to see your playlists.</p>
 
       <div class="sidebar-bottom">
-        <div class="sync-card"><span class="sync-dot"></span><span><strong>Local mode</strong><small>Ready to connect</small></span></div>
-        <button class="profile-button" id="settingsButton"><span class="avatar">H</span><span class="profile-copy"><strong>Hi there</strong><small id="connectionLabel">Personal account</small></span><span class="more">•••</span></button>
+        <div class="sync-card"><span class="sync-dot"></span><span><strong id="syncTitle">Setup needed</strong><small id="syncSubtitle">Add your API key</small></span></div>
+        <button class="profile-button" id="settingsButton"><span class="avatar">H</span><span class="profile-copy"><strong>Music desk</strong><small id="connectionLabel">Not connected</small></span><span class="more">•••</span></button>
       </div>
     </aside>
 
     <main id="main-content" class="main-shell">
       <header class="topbar">
-        <div class="breadcrumbs"><span>Monday, 22 August</span><span class="crumb-separator">/</span><span class="muted">personal listening desk</span></div>
-        <label class="search-shell"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search your library" aria-label="Search your library" /></label>
-        <div class="topbar-actions"><button class="icon-button" aria-label="Notifications">♧<span class="notification-dot"></span></button><button class="avatar top-avatar" aria-label="Open profile">H</button></div>
+        <div class="breadcrumbs"><span id="breadcrumbTitle">Browse</span><span class="crumb-separator">/</span><span class="muted">live YouTube music</span></div>
+        <label class="search-shell"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search songs, artists, playlists…" aria-label="Search YouTube music" /><button id="searchSubmit" class="search-submit" aria-label="Search">↵</button></label>
+        <div class="topbar-actions"><button class="icon-button" aria-label="Notifications">♧<span class="notification-dot"></span></button><button class="avatar top-avatar" id="topProfile" aria-label="Open settings">H</button></div>
       </header>
 
-      <section class="hero reveal">
-        <div>
-          <p class="eyebrow accent-label">Good evening, H.</p>
-          <h1>Make some<br /><em>room for sound.</em></h1>
-          <p class="hero-copy">A quiet place for the music you keep coming back to.</p>
-        </div>
+      <section class="browse-hero reveal">
+        <div><p class="eyebrow accent-label">LIVE CATALOG</p><h1>Browse the<br /><em>whole signal.</em></h1><p class="hero-copy">Search songs, artists, channels, and playlists from YouTube’s music catalog.</p></div>
         <div class="hero-orbit" aria-hidden="true"><div class="orbit-ring ring-one"></div><div class="orbit-ring ring-two"></div><div class="orbit-core">♫</div><span class="orbit-note note-one">♪</span><span class="orbit-note note-two">·</span></div>
       </section>
 
-      <section class="content-grid reveal delay-one">
-        <div class="primary-column">
-          <div class="section-heading"><div><p class="eyebrow">Pick up where you left off</p><h2>Continue listening</h2></div><button class="text-button" id="openQueue">View queue <span>↗</span></button></div>
-          <article class="feature-card" id="featureCard">
-            <div class="feature-art art-sound"><div class="art-label">MIX<br />01</div><div class="art-shape shape-a"></div><div class="art-shape shape-b"></div><div class="art-scribble">soft<br />focus</div></div>
-            <div class="feature-info"><div class="feature-meta"><span class="pill">CURATED FOR YOU</span><span class="duration">42 min</span></div><h3>Soft focus, sharp ideas</h3><p>Ambient textures for getting into the good kind of flow.</p><div class="feature-footer"><button class="play-button" id="featurePlay" aria-label="Play Soft focus, sharp ideas">▶</button><div class="progress-wrap"><div class="progress-label"><span>14 min played</span><span>28 min left</span></div><div class="progress-track"><div class="progress-fill" style="width: 33%"></div></div></div><button class="heart-button" aria-label="Add mix to favorites">♡</button></div></div>
-          </article>
+      <section class="browse-toolbar reveal delay-one" aria-label="Browse filters">
+        <div class="browse-tabs" role="tablist" aria-label="Result type">
+          <button class="browse-tab active" data-kind="music" role="tab" aria-selected="true">Music</button>
+          <button class="browse-tab" data-kind="videos" role="tab" aria-selected="false">Videos</button>
+          <button class="browse-tab" data-kind="playlists" role="tab" aria-selected="false">Playlists</button>
+          <button class="browse-tab" data-kind="channels" role="tab" aria-selected="false">Artists & channels</button>
+        </div>
+        <div class="filter-group"><label for="regionSelect">Region</label><select id="regionSelect"><option value="SG">Singapore</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="JP">Japan</option><option value="AU">Australia</option></select></div>
+      </section>
 
-          <div class="section-heading compact"><div><p class="eyebrow">Recently played</p><h2>Back in rotation</h2></div><button class="text-button">See all <span>↗</span></button></div>
-          <div class="track-list" id="trackList"></div>
+      <section class="content-grid browse-grid reveal delay-two">
+        <div class="primary-column">
+          <div class="section-heading"><div><p class="eyebrow" id="resultsEyebrow">Popular right now</p><h2 id="resultsHeading">Trending music</h2></div><span class="results-meta" id="resultsMeta"></span></div>
+          <div class="results-list" id="resultsList" aria-live="polite"></div>
+          <button class="load-more" id="loadMore" hidden>Load more results <span>↓</span></button>
         </div>
 
         <aside class="secondary-column">
           <div class="section-heading"><div><p class="eyebrow">Up next</p><h2>Your queue</h2></div><button class="icon-button small" id="clearQueue" aria-label="Clear queue">⌫</button></div>
-          <div class="queue-card"><div id="queueList"></div><button class="queue-add" id="addQueue">＋ Add from library</button></div>
-          <div class="mini-note"><span class="note-symbol">✦</span><div><strong>Make it yours</strong><p>Save a thought alongside a track. Your notes stay on this device.</p></div><button aria-label="Dismiss tip" class="dismiss-note">×</button></div>
+          <div class="queue-card"><div id="queueList"></div><button class="queue-add" id="addQueue">＋ Add selected result</button></div>
+          <div class="mini-note"><span class="note-symbol">✦</span><div><strong>Private by default</strong><p>Your queue, favorites, notes, and history stay in this browser.</p></div><button aria-label="Dismiss tip" class="dismiss-note">×</button></div>
         </aside>
       </section>
 
-      <section class="library-strip reveal delay-two"><div class="section-heading compact"><div><p class="eyebrow">Your library</p><h2>Small collections, good company.</h2></div><button class="text-button" data-view="library">Open library <span>↗</span></button></div><div class="collection-row"><button class="collection-card collection-coral" data-playlist="Late night coding"><span class="collection-count">18 tracks</span><strong>Late night<br />coding</strong><span class="collection-arrow">↗</span></button><button class="collection-card collection-yellow" data-playlist="Sunday reset"><span class="collection-count">12 tracks</span><strong>Sunday<br />reset</strong><span class="collection-arrow">↗</span></button><button class="collection-card collection-blue" data-playlist="The long way home"><span class="collection-count">24 tracks</span><strong>The long<br />way home</strong><span class="collection-arrow">↗</span></button></div></section>
+      <section class="recommendations-panel" id="recommendationsPanel"><div class="section-heading"><div><p class="eyebrow">Based on your listening</p><h2>You might like</h2></div><button class="text-button" id="refreshRecommendations">Refresh <span>↻</span></button></div><div class="recommendation-list" id="recommendationList"><div class="recommendation-empty">Play or search for a track to get recommendations.</div></div></section>
+
+      <section class="library-panel" id="libraryPanel" hidden><div class="section-heading"><div><p class="eyebrow">Your library</p><h2>Saved for later</h2></div></div><div class="library-grid"><div><p class="eyebrow">Favorites</p><div id="favoritesList" class="saved-list"></div></div><div><p class="eyebrow">History</p><div id="historyList" class="saved-list"></div></div></div></section>
     </main>
 
     <div class="player-bar" role="region" aria-label="Music player">
-      <div class="now-playing"><div class="mini-art art-cobalt"><span>◒</span></div><div><strong id="nowTitle">A Walk</strong><small id="nowArtist">Tycho · Awake</small></div><button class="control-button" id="noteCurrent" aria-label="Add a note to the current track">✎</button><button class="heart-button" aria-label="Add current track to favorites">♡</button></div>
-      <div class="player-controls"><div class="control-row"><button class="control-button" id="shuffle" aria-label="Toggle shuffle">⤨</button><button class="control-button" id="previous" aria-label="Previous track">|◀</button><button class="main-play" id="playPause" aria-label="Play">▶</button><button class="control-button" id="next" aria-label="Next track">▶|</button><button class="control-button" id="repeat" aria-label="Toggle repeat">↻</button></div><div class="player-progress"><span>2:14</span><div class="progress-track"><div class="progress-fill" style="width: 48%"></div></div><span>4:38</span></div></div>
+      <div class="now-playing"><div class="mini-art" id="nowThumb"><span>♪</span></div><div><strong id="nowTitle">Nothing selected</strong><small id="nowArtist">Search YouTube to begin</small></div><button class="control-button" id="noteCurrent" aria-label="Add a note to the current track" disabled>✎</button><button class="heart-button" id="favoriteCurrent" aria-label="Add current track to favorites" disabled>♡</button></div>
+      <div class="player-controls"><div class="control-row"><button class="control-button" id="shuffle" aria-label="Toggle shuffle">⤨</button><button class="control-button" id="previous" aria-label="Previous track">|◀</button><button class="main-play" id="playPause" aria-label="Play" disabled>▶</button><button class="control-button" id="next" aria-label="Next track">▶|</button><button class="control-button" id="repeat" aria-label="Toggle repeat">↻</button></div><div class="player-progress"><span>0:00</span><div class="progress-track"><div class="progress-fill" style="width: 0%"></div></div><span>0:00</span></div></div>
       <div class="player-tools"><button class="control-button" aria-label="Queue" id="queueToggle">☷</button><button class="control-button" aria-label="Volume">◖</button><div class="volume-track"><div class="volume-fill"></div></div><button class="control-button" aria-label="Full screen">⛶</button></div>
     </div>
+
     <div class="youtube-anchor" id="youtubePlayer" aria-hidden="true"></div>
     <div class="settings-modal" id="settingsModal" hidden>
       <div class="settings-backdrop" data-close-settings></div>
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
         <button class="modal-close" id="settingsClose" aria-label="Close settings">×</button>
-        <p class="eyebrow accent-label">Private connection</p>
-        <h2 id="settingsTitle">Connect your music desk.</h2>
-        <p class="settings-intro">Add your own Google Cloud credentials. They stay in this browser and are never sent anywhere except Google’s APIs.</p>
-        <label class="field-label" for="apiKeyInput">YouTube Data API key</label>
-        <input class="settings-input" id="apiKeyInput" type="password" placeholder="AIza..." autocomplete="off" />
-        <label class="field-label" for="clientIdInput">Google OAuth client ID</label>
-        <input class="settings-input" id="clientIdInput" type="text" placeholder="...apps.googleusercontent.com" autocomplete="off" />
+        <p class="eyebrow accent-label">Private connection</p><h2 id="settingsTitle">Connect your music desk.</h2>
+        <p class="settings-intro">YouTube search is secured on the server. Only your Google OAuth client ID is entered here; the API key belongs in Vercel environment variables.</p>
+        <label class="field-label" for="clientIdInput">Google OAuth client ID</label><input class="settings-input" id="clientIdInput" type="text" placeholder="...apps.googleusercontent.com" autocomplete="off" />
         <div class="settings-actions"><button class="secondary-button" id="saveSettings">Save credentials</button><button class="primary-button" id="connectGoogle">Connect Google</button></div>
-        <button class="import-button" id="importPlaylists">Import my YouTube playlists</button>
-        <p class="settings-status" id="settingsStatus">Not connected yet.</p>
-        <details class="setup-details"><summary>Where do I get these?</summary><p>Create a project in Google Cloud Console, enable YouTube Data API v3, create an API key, then create a Web OAuth client with this page’s URL as an allowed origin.</p></details>
+        <button class="import-button" id="importPlaylists">Import my YouTube playlists</button><p class="settings-status" id="settingsStatus">Not connected yet.</p>
+        <details class="setup-details"><summary>Where do I get these?</summary><p>Create a Google Cloud project, enable YouTube Data API v3, create a restricted API key, then create a Web OAuth client with this page’s origin as an allowed JavaScript origin.</p></details>
+      </section>
+    </div>
+    <div class="settings-modal" id="playlistPicker" hidden>
+      <div class="settings-backdrop" data-close-playlist-picker></div>
+      <section class="settings-panel playlist-picker-panel" role="dialog" aria-modal="true" aria-labelledby="playlistPickerTitle">
+        <button class="modal-close" id="playlistPickerClose" aria-label="Close playlist picker">×</button>
+        <p class="eyebrow accent-label">Save a track</p><h2 id="playlistPickerTitle">Add to a playlist.</h2>
+        <p class="settings-intro" id="playlistPickerTrack"></p>
+        <div class="playlist-picker-list" id="playlistPickerList"></div>
+        <div class="new-playlist-inline"><input class="settings-input" id="newPlaylistName" type="text" placeholder="Create a new playlist" /><button class="primary-button" id="createPlaylistFromPicker">Create</button></div>
       </section>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="app.js"></script>
   </body>
 </html>
+
