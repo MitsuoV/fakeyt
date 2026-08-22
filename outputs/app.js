@@ -59,8 +59,8 @@ async function loadRecommendations(seed) {
   } catch { /* Keep the last successful recommendations visible. */ }
 }
 
-function renderSetupState(message = 'Add your YouTube API key in Settings to browse live results.') {
-  resultsList.innerHTML = `<div class="browse-empty"><span class="empty-glyph">⌕</span><h3>Connect the catalog.</h3><p>${escapeHtml(message)}</p><button class="primary-button" id="openSettingsFromEmpty">Open settings</button></div>`;
+function renderSetupState(message = 'Add your YouTube API key in Settings to browse live results.', showSettings = true) {
+  resultsList.innerHTML = `<div class="browse-empty"><span class="empty-glyph">⌕</span><h3>Connect the catalog.</h3><p>${escapeHtml(message)}</p>${showSettings ? '<button class="primary-button" id="openSettingsFromEmpty">Open settings</button>' : ''}</div>`;
   $('#openSettingsFromEmpty')?.addEventListener('click', openSettings);
   $('#loadMore').hidden = true;
 }
@@ -227,8 +227,14 @@ async function apiGet(endpoint, authenticated = false) {
   const headers = authenticated ? { Authorization: `Bearer ${state.accessToken}` } : {};
   const response = await fetch(`/api/youtube?${params.toString()}`, { headers });
   if (response.status === 401) { state.accessToken = ''; saveState(); setConnectionState(); }
-  if (!response.ok) throw new Error('YouTube request failed');
-  return response.json();
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(payload?.error?.message || payload?.error || 'YouTube request failed');
+    error.status = response.status;
+    error.reason = payload?.error?.errors?.[0]?.reason || '';
+    throw error;
+  }
+  return payload;
 }
 
 function mapSearchResult(item) {
@@ -257,7 +263,7 @@ async function loadTrending() {
   if (!hasApiKey()) return renderSetupState();
   const requestId = ++requestSerial;
   resultsList.innerHTML = '<div class="browse-empty"><span class="loading-mark">◌</span><h3>Loading music…</h3><p>Fetching what is moving right now.</p></div>';
-  try { const seed = discoverySeeds[Math.floor(Math.random() * discoverySeeds.length)]; const data = await apiGet(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=12&q=${encodeURIComponent(seed)}&order=relevance`); if (requestId !== requestSerial || currentView !== 'home') return; const results = (data.items || []).map(mapSearchResult).filter((item) => item.kind === 'video'); nextPageToken = ''; $('#resultsEyebrow').textContent = `Discovery · ${seed}`; $('#resultsHeading').textContent = 'Trending now'; $('#resultsMeta').textContent = `${results.length} loaded`; renderResults(results); loadRecommendations(results[0]); } catch { if (requestId === requestSerial && currentView === 'home') renderSetupState('Music discovery could not load. Check your API key and quota.'); }
+  try { const data = await apiGet('https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=12&videoCategoryId=10&regionCode=SG'); if (requestId !== requestSerial || currentView !== 'home') return; const results = (data.items || []).map((item) => ({ kind: 'video', videoId: item.id, title: item.snippet?.title, artist: item.snippet?.channelTitle, thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url, tone: 'blue' })); nextPageToken = ''; $('#resultsEyebrow').textContent = 'Discovery · Singapore'; $('#resultsHeading').textContent = 'Trending now'; $('#resultsMeta').textContent = `${results.length} loaded`; renderResults(results); loadRecommendations(results[0]); } catch (error) { if (requestId !== requestSerial || currentView !== 'home') return; const quotaMessage = error?.status === 429 || error?.reason === 'rateLimitExceeded' || /quota/i.test(error?.message || ''); renderSetupState(quotaMessage ? 'YouTube’s daily API quota is exhausted. It will reset automatically, or you can request a higher quota in Google Cloud.' : 'Music discovery could not load right now. Check the YouTube API configuration.', !quotaMessage); }
 }
 
 async function openPlaylist(playlistId, title) {
