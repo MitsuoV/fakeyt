@@ -1,0 +1,73 @@
+/* Reference-inspired catalog structure: title, pill rail, then an image-led music list. */
+@media (max-width:740px){
+  .sidebar{padding-top:10px;padding-bottom:9px}
+  .sidebar .brand{display:none}
+  .primary-nav{max-width:310px;margin:0 auto}
+  .nav-item{min-height:34px;background:transparent!important;border-color:transparent!important;box-shadow:none!important;transform:none!important}
+  .nav-item:after{display:none}
+  .nav-item .nav-icon{color:var(--faint);font-size:12px}
+  .nav-item.active{color:var(--yellow);background:#20251f!important}
+  .nav-item.active .nav-icon{color:var(--yellow)}
+
+  .main-shell{padding-top:0}
+  .topbar{min-height:72px;padding-top:13px;border-bottom:0;grid-template-rows:25px 36px;gap:8px}
+  .breadcrumbs{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.07em;color:var(--ink)}
+  .breadcrumbs .crumb-separator,.breadcrumbs .muted{display:none}
+  .browse-hero{display:none}
+
+  .browse-toolbar{margin:0 -16px 13px;padding:3px 16px 14px;border-top:0;border-bottom:1px solid var(--line);background:transparent}
+  .browse-tabs{margin:0 -16px 10px;padding:0 16px 3px;gap:7px}
+  .browse-tab{min-height:31px;padding:7px 12px;border-radius:999px;background:#181b18;font-size:8px;box-shadow:none}
+  .browse-tab.active{background:var(--yellow);border-color:var(--yellow);color:#171811;box-shadow:0 4px 12px #e8ca6321}
+  .filter-group{min-height:25px;padding:0 2px;color:var(--faint)}
+  .filter-group select{min-height:27px;background:transparent;border:0;padding:5px 4px;color:var(--muted)}
+
+  .content-grid{display:block}
+  .primary-column{margin:0 -7px;padding:0 14px 8px;border:1px solid #363c35;border-radius:22px 22px 12px 12px;background:linear-gradient(180deg,#1b1e1b,#151815);box-shadow:0 18px 35px #0003}
+  .primary-column .section-heading{padding:20px 1px 0;margin-bottom:13px;align-items:center}
+  .primary-column .section-heading .eyebrow{display:none}
+  .primary-column .section-heading h2{font-size:23px;letter-spacing:-.08em;margin:0}
+  .results-meta{font-size:8px}
+  .results-list{border-top:1px solid var(--line)}
+  .result-card{grid-template-columns:48px minmax(0,1fr) 78px;gap:11px;min-height:69px;padding:11px 0}
+  .result-thumb{width:48px;height:48px;border-radius:10px;box-shadow:0 5px 12px #0003}
+  .result-copy h3{font-size:11px;line-height:1.2;margin:4px 0 4px}
+  .result-copy p{font-size:8px}
+  .result-kind{font-size:7px;letter-spacing:.1em}
+  .result-actions{gap:3px}
+  .result-action{width:26px;height:26px;min-width:26px;border-color:transparent;background:transparent;box-shadow:none;font-size:11px}
+  .result-action:hover{border-color:#4f584b;background:#2a3028;box-shadow:none;transform:none}
+  .result-card .play-result{background:#2c3020;border-color:#6b623b}
+  .result-card .playlist-result{color:var(--mint)}
+  .load-more{border-radius:999px;margin:15px 0 7px;width:100%;background:#1f241e}
+
+  .recommendations-panel{margin:28px -7px 0;padding:19px 14px 0;border-top:0;border-radius:18px;background:#181b18}
+  .recommendations-panel .section-heading{margin-bottom:4px}
+  .recommendations-panel .section-heading h2{font-size:20px}
+  .recommendations-panel .eyebrow{font-size:8px}
+  .recommendation-list{grid-template-columns:1fr;gap:0}
+  .recommendation-card{grid-template-columns:44px minmax(0,1fr) 30px 30px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:11px 0;transform:none!important;box-shadow:none}
+  .recommendation-card:last-child{border-bottom:0}
+  .recommendation-card:hover{background:transparent}
+  .recommendation-thumb{width:44px;height:42px;border-radius:9px}
+  .recommendation-copy strong{font-size:9px}
+  .recommendation-copy small{font-size:8px}
+  .recommendation-card .result-action{width:28px;height:28px;min-width:28px}
+
+  .secondary-column{margin:30px 0 0}
+  .secondary-column .section-heading h2{font-size:20px}
+  .queue-card{border-radius:16px;background:#181b18}
+  .mini-note{border-bottom:0}
+  .library-panel{margin-left:-7px;margin-right:-7px;padding-left:14px;padding-right:14px;border-radius:18px;background:#181b18}
+}
+
+@media (max-width:390px){
+  .main-shell{padding-left:13px;padding-right:13px}
+  .browse-toolbar{margin-left:-13px;margin-right:-13px;padding-left:13px;padding-right:13px}
+  .browse-tabs{margin-left:-13px;margin-right:-13px;padding-left:13px;padding-right:13px}
+  .primary-column,.recommendations-panel,.library-panel{margin-left:-5px;margin-right:-5px}
+  .result-card{grid-template-columns:46px minmax(0,1fr) 70px;gap:9px}
+  .result-thumb{width:46px;height:46px}
+  .result-action{width:24px;height:24px;min-width:24px}
+}
+
