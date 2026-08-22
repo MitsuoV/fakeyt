@@ -15,8 +15,10 @@ let currentResults = [];
 let nextPageToken = '';
 let lastQuery = '';
 let pickerTrack = null;
+let menuTrack = null;
 let recommendationItems = [];
 let recommendationSeed = null;
+let currentView = 'home';
 const discoverySeeds = ['new music', 'indie pop', 'lofi beats', 'electronic music', 'jazz', 'r&b', 'ambient music', 'alternative rock'];
 
 function getSavedState() {
@@ -66,9 +68,9 @@ function renderResults(items = currentResults) {
   if (!items.length) { resultsList.innerHTML = '<div class="browse-empty"><span class="empty-glyph">∅</span><h3>No results found.</h3><p>Try a different search or choose another result type.</p></div>'; $('#loadMore').hidden = true; return; }
   resultsList.innerHTML = items.map((item, index) => {
     const isVideo = item.kind === 'video';
-    const action = isVideo ? `<button class="result-action play-result" data-result-index="${index}" aria-label="Play ${escapeHtml(item.title)}">▶</button><button class="result-action add-result" data-add-index="${index}" aria-label="Add ${escapeHtml(item.title)} to queue">＋</button><button class="result-action playlist-result" data-playlist-track-index="${index}" aria-label="Save ${escapeHtml(item.title)} to a playlist">▤</button>` : item.kind === 'playlist' ? `<button class="result-action open-playlist" data-playlist-id="${escapeHtml(item.playlistId)}" data-playlist-title="${escapeHtml(item.title)}" aria-label="Open ${escapeHtml(item.title)}">↗</button>` : `<a class="result-action" href="https://www.youtube.com/channel/${encodeURIComponent(item.channelId)}" target="_blank" rel="noreferrer" aria-label="Open ${escapeHtml(item.title)} on YouTube">↗</a>`;
+    const action = isVideo ? `<button class="result-menu-trigger" data-menu-index="${index}" aria-label="More options for ${escapeHtml(item.title)}">•••</button>` : item.kind === 'playlist' ? `<button class="result-action open-playlist" data-playlist-id="${escapeHtml(item.playlistId)}" data-playlist-title="${escapeHtml(item.title)}" aria-label="Open ${escapeHtml(item.title)}">↗</button>` : `<a class="result-action" href="https://www.youtube.com/channel/${encodeURIComponent(item.channelId)}" target="_blank" rel="noreferrer" aria-label="Open ${escapeHtml(item.title)} on YouTube">↗</a>`;
     const kindLabel = item.kind === 'video' ? 'VIDEO' : item.kind === 'playlist' ? 'PLAYLIST' : 'CHANNEL';
-    return `<article class="result-card"><div class="result-thumb art-${escapeHtml(item.tone || 'blue')}">${thumbnailMarkup(item)}</div><div class="result-copy"><span class="result-kind">${kindLabel}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.artist || item.description || '')}</p></div><div class="result-actions">${action}</div></article>`;
+    return `<article class="result-card" data-result-card-index="${index}"><div class="result-thumb art-${escapeHtml(item.tone || 'blue')}">${thumbnailMarkup(item)}</div><div class="result-copy"><span class="result-kind">${kindLabel}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.artist || item.description || '')}</p></div><div class="result-actions">${action}</div></article>`;
   }).join('');
   $('#loadMore').hidden = !nextPageToken;
 }
@@ -80,15 +82,21 @@ function renderQueue() {
 
 function renderPlaylists() {
   const container = $('#remotePlaylists');
-  container.innerHTML = state.playlists.map((playlist) => playlist.local ? `<button class="playlist-link" data-local-playlist="${escapeHtml(playlist.id)}" data-playlist-title="${escapeHtml(playlist.title)}"><span class="playlist-dot yellow"></span>${escapeHtml(playlist.title)}</button>` : `<button class="playlist-link" data-remote-playlist="${escapeHtml(playlist.id)}" data-playlist-title="${escapeHtml(playlist.title)}"><span class="playlist-dot mint"></span>${escapeHtml(playlist.title)}</button>`).join('');
-  $('#playlistEmpty').hidden = state.playlists.length > 0;
+  const localPlaylists = state.playlists.filter((playlist) => playlist.local);
+  container.innerHTML = localPlaylists.map((playlist) => `<button class="playlist-link" data-local-playlist="${escapeHtml(playlist.id)}" data-playlist-title="${escapeHtml(playlist.title)}"><span class="playlist-dot yellow"></span>${escapeHtml(playlist.title)}</button>`).join('');
+  $('#playlistEmpty').hidden = localPlaylists.length > 0;
 }
 
 function createLocalPlaylist(title) {
   const clean = title.trim();
   if (!clean) return;
   state.playlists.unshift({ id: `local-${Date.now()}`, title: clean, local: true, tracks: [] });
-  saveState(); renderPlaylists(); showToast(`“${clean}” created.`);
+  saveState(); renderPlaylists(); renderLibrary(); showToast(`“${clean}” created.`);
+}
+
+function createPlaylistFromPrompt() {
+  const title = window.prompt('Name your new playlist');
+  if (title?.trim()) createLocalPlaylist(title);
 }
 
 function openLocalPlaylist(id, title) {
@@ -117,6 +125,18 @@ function openPlaylistPicker(track) {
 
 function closePlaylistPicker() { $('#playlistPicker').hidden = true; pickerTrack = null; }
 
+function closeTrackMenu() { $('#trackMenu').hidden = true; menuTrack = null; }
+
+function openTrackMenu(track, trigger) {
+  if (!track) return;
+  menuTrack = track;
+  const menu = $('#trackMenu');
+  const bounds = trigger.getBoundingClientRect();
+  menu.hidden = false;
+  menu.style.top = `${Math.min(window.innerHeight - 112, bounds.bottom + 8)}px`;
+  menu.style.left = `${Math.max(12, Math.min(window.innerWidth - 190, bounds.right - 178))}px`;
+}
+
 function addToLocalPlaylist(id) {
   const playlist = state.playlists.find((item) => item.id === id);
   if (!playlist || !pickerTrack) return;
@@ -129,16 +149,18 @@ function renderLibrary() {
   const favorites = state.history.map((entry) => entry.track).filter((item) => state.favorites.includes(trackKey(item)));
   const history = state.history.map((entry) => entry.track);
   const renderSaved = (items, empty) => items.length ? items.slice(0, 20).map((item) => `<button class="saved-item" data-saved-video="${escapeHtml(item.videoId || '')}"><span>${escapeHtml(item.title)}</span><small>${escapeHtml(item.artist || 'YouTube')}</small></button>`).join('') : `<p class="saved-empty">${empty}</p>`;
+  const localPlaylists = state.playlists.filter((playlist) => playlist.local);
+  $('#libraryPlaylists').innerHTML = localPlaylists.length ? localPlaylists.map((playlist) => `<button class="library-playlist-card" data-library-playlist="${escapeHtml(playlist.id)}" data-playlist-title="${escapeHtml(playlist.title)}"><span class="library-playlist-art">♫</span><span class="library-playlist-copy"><strong>${escapeHtml(playlist.title)}</strong><small>${(playlist.tracks || []).length} ${(playlist.tracks || []).length === 1 ? 'song' : 'songs'}</small></span><span class="library-playlist-arrow">›</span></button>`).join('') : '<div class="library-empty"><span>＋</span><strong>Your library is empty.</strong><p>Create a playlist and start collecting songs.</p><button class="primary-button" id="createFirstPlaylist">Create playlist</button></div>';
   $('#favoritesList').innerHTML = renderSaved(favorites, 'No favorites yet.');
   $('#historyList').innerHTML = renderSaved(history, 'Your listening history will appear here.');
+  $('#createFirstPlaylist')?.addEventListener('click', createPlaylistFromPrompt);
 }
 
 function setConnectionState() {
-  const connected = hasGoogleConnection();
-  $('#connectionLabel').textContent = connected ? 'Google connected' : hasApiKey() ? 'Search ready' : 'Not connected';
-  $('#syncTitle').textContent = connected ? 'Google connected' : hasApiKey() ? 'Search ready' : 'Setup needed';
-  $('#syncSubtitle').textContent = connected ? 'Playlists available' : hasApiKey() ? 'Add Google access for playlists' : 'Add your API key';
-  $('#settingsStatus').textContent = connected ? 'Connected to Google. Your playlists are ready to import.' : hasApiKey() ? 'API key saved. Google access is not connected.' : 'Not connected yet.';
+  $('#connectionLabel').textContent = 'Local library';
+  $('#syncTitle').textContent = 'Local mode';
+  $('#syncSubtitle').textContent = 'Saved on this device';
+  $('#settingsStatus').textContent = 'Local mode is ready.';
 }
 
 function updateCurrentUI() {
@@ -204,7 +226,8 @@ function mapSearchResult(item) {
 async function searchYouTube(reset = true) {
   if (!hasApiKey()) return renderSetupState();
   const query = $('#searchInput').value.trim();
-  if (!query) return loadTrending();
+  if (!query) return currentView === 'home' ? loadTrending() : renderBrowsePrompt();
+  if (currentView !== 'browse') setActiveView('browse');
   if (reset) { nextPageToken = ''; currentResults = []; resultsList.innerHTML = '<div class="browse-empty"><span class="loading-mark">◌</span><h3>Searching…</h3><p>Finding the good stuff.</p></div>'; }
   const type = currentKind === 'playlists' ? 'playlist' : currentKind === 'channels' ? 'channel' : 'video';
   try {
@@ -226,28 +249,59 @@ async function openPlaylist(playlistId, title) {
   try { const data = await apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50`); const results = (data.items || []).filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: item.snippet.thumbnails?.medium?.url, tone: 'coral' })); $('#resultsHeading').textContent = title; $('#resultsEyebrow').textContent = 'Playlist'; $('#resultsMeta').textContent = `${results.length} tracks`; nextPageToken = ''; renderResults(results); } catch { showToast('Could not open that playlist.'); }
 }
 
-async function importPlaylists() {
-  if (!hasGoogleConnection()) return showToast('Connect Google before importing playlists.');
-  try { const data = await apiGet('https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50', true); const localPlaylists = state.playlists.filter((playlist) => playlist.local); state.playlists = [...localPlaylists, ...(data.items || []).map((item) => ({ id: item.id, title: item.snippet.title, count: item.contentDetails.itemCount }))]; saveState(); renderPlaylists(); showToast(`${state.playlists.length} playlists imported`); } catch { showToast('Could not import your playlists.'); }
-}
-
-async function connectGoogle() {
-  if (!state.clientId) return showToast('Add your Google OAuth client ID first.');
-  try { await loadScript('https://accounts.google.com/gsi/client', 'google-identity-services'); tokenClient = window.google.accounts.oauth2.initTokenClient({ client_id: state.clientId, scope: SCOPES, callback: async (response) => { if (response.error) return showToast(`Google connection failed: ${response.error}`); state.accessToken = response.access_token; saveState(); setConnectionState(); showToast('Google connected.'); await importPlaylists(); } }); tokenClient.requestAccessToken({ prompt: state.accessToken ? '' : 'consent' }); } catch { showToast('Google sign-in could not load.'); }
-}
-
 function toggleFavorite() { if (!currentTrack) return showToast('Play a result before saving it.'); const key = trackKey(currentTrack); state.favorites = state.favorites.includes(key) ? state.favorites.filter((item) => item !== key) : [...state.favorites, key]; saveState(); updateCurrentUI(); renderLibrary(); showToast(state.favorites.includes(key) ? 'Saved to favorites.' : 'Removed from favorites.'); }
 function addNote() { if (!currentTrack) return; const key = trackKey(currentTrack); const note = window.prompt(`Note for “${currentTrack.title}”`, state.notes[key] || ''); if (note === null) return; if (note.trim()) state.notes[key] = note.trim(); else delete state.notes[key]; saveState(); showToast(note.trim() ? 'Note saved on this device.' : 'Note removed.'); }
-function openSettings() { $('#clientIdInput').value = state.clientId; setConnectionState(); $('#settingsModal').hidden = false; $('#clientIdInput').focus(); }
+function openSettings() { setConnectionState(); $('#settingsModal').hidden = false; }
 function closeSettings() { $('#settingsModal').hidden = true; }
-function showView(view) { $('#libraryPanel').hidden = view !== 'library'; document.querySelector('.browse-grid').hidden = view === 'library'; $('.browse-hero').hidden = view === 'library'; $('.browse-toolbar').hidden = view === 'library'; $('#breadcrumbTitle').textContent = view[0].toUpperCase() + view.slice(1); if (view === 'library') renderLibrary(); if (view === 'home') { $('#libraryPanel').hidden = false; $('.browse-hero').hidden = false; $('.browse-toolbar').hidden = true; document.querySelector('.browse-grid').hidden = false; $('#resultsHeading').textContent = 'Your listening space'; renderSetupState('Search YouTube to start building your personal library.'); } }
+function setActiveView(view) {
+  currentView = view;
+  $('#libraryPanel').hidden = view !== 'library';
+  document.querySelector('.browse-grid').hidden = view === 'library';
+  $('.browse-hero').hidden = view !== 'home';
+  $('.browse-toolbar').hidden = view !== 'browse';
+  $('#recommendationsPanel').hidden = view === 'library';
+  $('#breadcrumbTitle').textContent = view === 'library' ? 'Library' : view === 'browse' ? 'Search' : 'Home';
+  document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view));
+}
 
-renderQueue(); renderPlaylists(); renderLibrary(); setConnectionState(); updateCurrentUI();
+function renderBrowsePrompt() {
+  currentResults = [];
+  nextPageToken = '';
+  $('#resultsEyebrow').textContent = 'Search the catalog';
+  $('#resultsHeading').textContent = 'Find a song';
+  $('#resultsMeta').textContent = '';
+  resultsList.innerHTML = '<div class="browse-empty"><span class="empty-glyph">⌕</span><h3>Search for something you love.</h3><p>Type a song, artist, album, or playlist above. Tap any song to play it instantly.</p></div>';
+  $('#loadMore').hidden = true;
+  renderRecommendations([]);
+}
+
+function showView(view) {
+  setActiveView(view);
+  if (view === 'home') {
+    $('#searchInput').value = '';
+    loadTrending();
+  } else if (view === 'browse') {
+    $('#searchInput').value = '';
+    renderBrowsePrompt();
+    $('#searchInput').focus();
+  } else if (view === 'library') {
+    renderLibrary();
+  }
+}
+
+renderQueue(); renderPlaylists(); renderLibrary(); setConnectionState(); updateCurrentUI(); setActiveView('home');
 if (hasApiKey()) loadTrending(); else renderSetupState();
 
 trackListSetup();
 function trackListSetup() {
-  resultsList.addEventListener('click', (event) => { const play = event.target.closest('[data-result-index]'); const add = event.target.closest('[data-add-index]'); const playlistTrack = event.target.closest('[data-playlist-track-index]'); const playlist = event.target.closest('[data-playlist-id]'); if (play) playTrack(currentResults[Number(play.dataset.resultIndex)]); if (add) { state.queue.push(currentResults[Number(add.dataset.addIndex)]); renderQueue(); showToast('Added to queue.'); } if (playlistTrack) openPlaylistPicker(currentResults[Number(playlistTrack.dataset.playlistTrackIndex)]); if (playlist) openPlaylist(playlist.dataset.playlistId, playlist.dataset.playlistTitle); });
+  resultsList.addEventListener('click', (event) => {
+    const menu = event.target.closest('[data-menu-index]');
+    const playlist = event.target.closest('[data-playlist-id]');
+    const card = event.target.closest('[data-result-card-index]');
+    if (menu) { event.stopPropagation(); return openTrackMenu(currentResults[Number(menu.dataset.menuIndex)], menu); }
+    if (playlist) return openPlaylist(playlist.dataset.playlistId, playlist.dataset.playlistTitle);
+    if (card && currentResults[Number(card.dataset.resultCardIndex)]?.kind === 'video') playTrack(currentResults[Number(card.dataset.resultCardIndex)]);
+  });
   queueList.addEventListener('click', (event) => { const remove = event.target.closest('[data-remove-index]'); if (remove) { state.queue.splice(Number(remove.dataset.removeIndex), 1); renderQueue(); } });
 }
 
@@ -258,12 +312,13 @@ $('#regionSelect').addEventListener('change', loadTrending);
 document.querySelectorAll('.browse-tab').forEach((tab) => tab.addEventListener('click', () => { document.querySelectorAll('.browse-tab').forEach((item) => { item.classList.remove('active'); item.setAttribute('aria-selected', 'false'); }); tab.classList.add('active'); tab.setAttribute('aria-selected', 'true'); currentKind = tab.dataset.kind; if ($('#searchInput').value.trim()) searchYouTube(true); else loadTrending(); }));
 $('#playPause').addEventListener('click', async () => { if (!currentTrack) return; try { await ensurePlayer(); if (isPlaying) player.pauseVideo(); else player.playVideo(); } catch { showToast('The official player could not load.'); } });
 $('#next').addEventListener('click', nextTrack); $('#previous').addEventListener('click', previousTrack); $('#clearQueue').addEventListener('click', () => { state.queue = []; renderQueue(); showToast('Queue cleared.'); }); $('#addQueue').addEventListener('click', () => { if (currentResults[0]) { state.queue.push(currentResults[0]); renderQueue(); showToast('Added to queue.'); } else showToast('Search for a result first.'); }); $('#queueToggle').addEventListener('click', () => document.querySelector('.secondary-column').scrollIntoView({ behavior: 'smooth', block: 'center' }));
-$('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings); $('#importShortcut').addEventListener('click', importPlaylists);
-$('#newPlaylist').addEventListener('click', () => { const title = window.prompt('Name your new playlist'); if (title?.trim()) createLocalPlaylist(title); });
+$('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings);
+$('#newPlaylist').addEventListener('click', createPlaylistFromPrompt); $('#newPlaylistLibrary').addEventListener('click', createPlaylistFromPrompt);
 $('#remotePlaylists').addEventListener('click', (event) => { const remote = event.target.closest('[data-remote-playlist]'); const local = event.target.closest('[data-local-playlist]'); if (remote) openPlaylist(remote.dataset.remotePlaylist, remote.dataset.playlistTitle); if (local) openLocalPlaylist(local.dataset.localPlaylist, local.dataset.playlistTitle); });
+$('#libraryPlaylists').addEventListener('click', (event) => { const playlist = event.target.closest('[data-library-playlist]'); if (playlist) { showView('browse'); openLocalPlaylist(playlist.dataset.libraryPlaylist, playlist.dataset.playlistTitle); } });
 $('#playlistPickerClose').addEventListener('click', closePlaylistPicker); document.querySelector('[data-close-playlist-picker]').addEventListener('click', closePlaylistPicker); $('#playlistPickerList').addEventListener('click', (event) => { const pick = event.target.closest('[data-pick-playlist]'); if (pick) addToLocalPlaylist(pick.dataset.pickPlaylist); }); $('#createPlaylistFromPicker').addEventListener('click', () => { const title = $('#newPlaylistName').value; if (!title.trim()) return; createLocalPlaylist(title); $('#newPlaylistName').value = ''; renderPlaylistPicker(); });
+$('#menuAddPlaylist').addEventListener('click', () => { const track = menuTrack; closeTrackMenu(); openPlaylistPicker(track); }); $('#menuAddQueue').addEventListener('click', () => { if (!menuTrack) return; state.queue.push(menuTrack); renderQueue(); showToast('Added to queue.'); closeTrackMenu(); }); document.addEventListener('click', (event) => { if (!event.target.closest('#trackMenu') && !event.target.closest('[data-menu-index]')) closeTrackMenu(); });
 $('#recommendationList').addEventListener('click', (event) => { const play = event.target.closest('[data-recommendation-index]'); const add = event.target.closest('[data-recommendation-add-index]'); if (play) playTrack(recommendationItems[Number(play.dataset.recommendationIndex)]); if (add) { state.queue.push(recommendationItems[Number(add.dataset.recommendationAddIndex)]); renderQueue(); showToast('Added to queue.'); } }); $('#refreshRecommendations').addEventListener('click', () => loadRecommendations(recommendationSeed || currentTrack || currentResults.find((item) => item.kind === 'video')));
-$('#saveSettings').addEventListener('click', () => { state.clientId = $('#clientIdInput').value.trim(); saveState(); setConnectionState(); showToast('Connection settings saved.'); loadTrending(); }); $('#connectGoogle').addEventListener('click', () => { state.clientId = $('#clientIdInput').value.trim(); saveState(); connectGoogle(); }); $('#importPlaylists').addEventListener('click', importPlaylists);
 document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.nav-item').forEach((item) => item.classList.remove('active')); button.classList.add('active'); showView(button.dataset.view); })); document.querySelector('.dismiss-note').addEventListener('click', (event) => event.currentTarget.closest('.mini-note').remove());
 document.addEventListener('keydown', (event) => { if (event.target.matches('input, textarea, button')) return; if (event.code === 'Space') { event.preventDefault(); $('#playPause').click(); } if (event.code === 'ArrowRight') nextTrack(); if (event.code === 'ArrowLeft') previousTrack(); });
 
