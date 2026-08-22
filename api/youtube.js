@@ -20,7 +20,7 @@ module.exports = async function handler(request, response) {
   const params = new URLSearchParams({ part: 'snippet' });
 
   if (action === 'search') {
-    const kind = query.kind || 'music';
+    const kind = query.kind || (query.type === 'playlist' ? 'playlists' : query.type === 'channel' ? 'channels' : 'music');
     resource = 'search';
     addIfPresent(params, 'type', kind === 'playlists' ? 'playlist' : kind === 'channels' ? 'channel' : 'video');
     addIfPresent(params, 'q', query.q);
