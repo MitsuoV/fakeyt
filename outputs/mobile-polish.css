@@ -1,0 +1,124 @@
+/* Final responsive pass: keep the desktop desk, give small screens their own rhythm. */
+:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+.recommendation-card{transition:border-color .2s ease,transform .2s var(--ease),background .2s ease}
+.recommendation-card:hover{border-color:#555d52;background:#1d201d;transform:translateY(-2px)}
+.playlist-picker-panel{max-height:min(680px,calc(100vh - 34px));overflow:auto}
+
+@media (max-width:740px){
+  body{background:radial-gradient(circle at 90% 3%,#22261d 0,#101110 35%),var(--bg)}
+  .grain{opacity:.035}
+  .sidebar{position:sticky;top:0;width:100%;height:auto;padding:14px 16px 11px;background:#131513f5;border-bottom:1px solid #383c36;box-shadow:0 10px 26px #0005;backdrop-filter:blur(16px)}
+  .brand{margin:0 0 12px;font-size:17px}
+  .brand-mark{font-size:21px}
+  .primary-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:0}
+  .nav-item{min-height:36px;padding:8px 6px;border:1px solid transparent;font-size:9px;gap:6px}
+  .nav-item.active{border-color:var(--line);background:#202320}
+  .nav-icon{font-size:13px;width:auto}
+  .sidebar-rule{display:block;height:1px;margin:13px 0 11px}
+  .nav-heading{display:flex;min-height:24px}
+  .nav-heading .nav-label{font-size:8px}
+  .nav-actions{gap:6px}
+  .nav-actions .icon-button.small{width:26px;height:26px;background:#191c19}
+  .playlist-nav{display:flex;gap:7px;max-height:none;overflow-x:auto;margin:9px -16px 0;padding:0 16px 3px;scrollbar-width:none}
+  .playlist-nav::-webkit-scrollbar{display:none}
+  .playlist-link{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:999px;background:#191c19;font-size:9px;white-space:nowrap}
+  .playlist-dot{width:6px;height:6px}
+  .sidebar-empty{margin:9px 2px 0;font-size:8px}
+  .sidebar-bottom{display:none}
+
+  .main-shell{padding:0 16px 154px}
+  .topbar{min-height:88px;height:auto;padding:13px 0 11px;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:23px 38px;gap:10px}
+  .breadcrumbs{font-size:9px}
+  .topbar-actions{gap:6px}
+  .topbar-actions .top-avatar{display:grid;width:27px;height:27px}
+  .search-shell{height:38px;border-radius:8px;background:#181b18;box-shadow:inset 0 0 0 1px #1f231f}
+  .search-shell input{font-size:10px}
+
+  .browse-hero{min-height:218px;padding:28px 0 24px;align-items:flex-start}
+  .browse-hero .accent-label{margin-bottom:13px;font-size:9px}
+  .browse-hero h1{font-size:clamp(43px,14vw,58px);line-height:.91;max-width:245px}
+  .browse-hero .hero-copy{max-width:225px;margin-top:15px;font-size:9px;line-height:1.6}
+  .browse-hero .hero-orbit{right:-25px;bottom:-27px;width:137px;height:137px;opacity:.62}
+  .browse-hero .orbit-core{inset:46px}
+  .browse-hero .ring-two{inset:24px}
+
+  .browse-toolbar{margin:0 -16px 26px;padding:10px 16px 11px;background:#141614;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .browse-tabs{width:auto;margin:0 -16px 11px;padding:0 16px 2px;gap:5px}
+  .browse-tab{min-height:34px;padding:8px 11px;border-radius:999px;font-size:9px;background:#181b18}
+  .browse-tab.active{background:#292d25;border-color:#4a5042}
+  .filter-group{min-height:28px;margin:0;font-size:8px}
+  .filter-group select{min-height:29px;padding:6px 8px;font-size:9px}
+
+  .section-heading{margin-bottom:13px}
+  .section-heading h2{font-size:18px}
+  .results-meta{font-size:8px;max-width:130px}
+  .result-card{grid-template-columns:58px minmax(0,1fr) 72px;gap:10px;min-height:76px;padding:11px 0}
+  .result-thumb{width:58px;height:52px;border-radius:7px}
+  .result-copy h3{font-size:11px;line-height:1.28;margin:5px 0 4px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
+  .result-copy p{font-size:8px}
+  .result-actions{gap:4px;justify-content:flex-end;flex-wrap:wrap}
+  .result-action{width:30px;height:30px;min-width:30px;padding:0;font-size:11px;background:#181b18}
+  .load-more{width:100%;margin-top:16px}
+
+  .recommendations-panel{margin:38px 0 0;padding-top:23px}
+  .recommendations-panel .section-heading{align-items:center}
+  .recommendations-panel .text-button{font-size:9px}
+  .recommendation-list{grid-template-columns:1fr;gap:7px}
+  .recommendation-card{grid-template-columns:45px minmax(0,1fr) 30px 30px;gap:8px;padding:8px;border-radius:8px}
+  .recommendation-thumb{width:45px;height:42px;border-radius:6px}
+  .recommendation-copy strong{font-size:9px}
+  .recommendation-copy small{font-size:8px}
+  .recommendation-card .result-action{width:28px;height:28px;min-width:28px}
+
+  .secondary-column{margin-top:38px}
+  .queue-card{padding:3px 12px 0;border-radius:9px}
+  .queue-row{min-height:58px;padding:11px 0}
+  .queue-copy strong{font-size:9px}
+  .queue-copy small{font-size:8px}
+  .queue-add{padding:15px 0;font-size:9px}
+  .mini-note{padding:15px 0;margin-top:15px}
+  .mini-note p{font-size:8px}
+
+  .library-panel{margin-top:30px;padding-top:23px}
+  .library-grid{gap:24px}
+  .saved-item{padding:11px 0}
+  .saved-item span{font-size:10px}
+  .saved-item small,.saved-empty{font-size:8px}
+
+  .player-bar{height:112px;padding:10px 16px 9px;background:#171917f7;box-shadow:0 -12px 28px #0007}
+  .now-playing{height:34px;gap:9px;padding-right:76px}
+  .now-playing .mini-art{width:34px;height:34px;border-radius:6px}
+  .now-playing strong{max-width:calc(100vw - 142px);font-size:10px}
+  .now-playing small{max-width:calc(100vw - 142px);font-size:8px;margin-top:3px}
+  .now-playing .control-button{margin-left:auto}
+  .now-playing .heart-button{font-size:20px}
+  .control-row{top:12px;right:16px;gap:7px}
+  .control-row .control-button{font-size:11px}
+  .main-play{width:31px;height:31px}
+  .player-progress{margin-top:16px;font-size:8px}
+  .toast{right:14px;bottom:123px;max-width:calc(100vw - 28px)}
+
+  .settings-panel{width:calc(100vw - 24px);padding:26px 19px 20px;border-radius:12px}
+  .settings-panel h2{font-size:24px}
+  .settings-intro{font-size:9px;margin-bottom:20px}
+  .settings-actions{gap:7px}
+  .playlist-picker-panel{max-height:calc(100vh - 24px)}
+  .new-playlist-inline{gap:7px}
+}
+
+@media (max-width:390px){
+  .sidebar{padding-left:13px;padding-right:13px}
+  .playlist-nav{margin-left:-13px;margin-right:-13px;padding-left:13px;padding-right:13px}
+  .main-shell{padding-left:13px;padding-right:13px}
+  .browse-toolbar{margin-left:-13px;margin-right:-13px;padding-left:13px;padding-right:13px}
+  .browse-tabs{margin-left:-13px;margin-right:-13px;padding-left:13px;padding-right:13px}
+  .result-card{grid-template-columns:51px minmax(0,1fr) 66px;gap:8px}
+  .result-thumb{width:51px;height:47px}
+  .result-action{width:27px;height:27px;min-width:27px}
+  .recommendation-card{grid-template-columns:42px minmax(0,1fr) 28px 28px;gap:7px}
+  .recommendation-thumb{width:42px;height:40px}
+  .now-playing strong,.now-playing small{max-width:calc(100vw - 132px)}
+}
+
+@media (prefers-reduced-motion:reduce){.recommendation-card{transition:none}}
+
