@@ -1,0 +1,11 @@
+html,body{touch-action:manipulation;overscroll-behavior-x:none}
+.browse-grid[hidden],.recommendations-panel[hidden],.library-panel[hidden],.search-shell[hidden]{display:none!important}
+.topbar:not(.search-view){grid-template-columns:1fr auto}
+@media(max-width:740px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden;touch-action:pan-y}
+  .topbar:not(.search-view){min-height:58px;grid-template-rows:28px;padding-bottom:8px}
+  .topbar.search-view{min-height:79px}
+  .browse-grid:not([hidden]){display:block}
+  .library-panel:not([hidden]){display:block}
+}
+
