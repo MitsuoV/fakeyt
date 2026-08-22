@@ -88,8 +88,7 @@
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
         <button class="modal-close" id="settingsClose" aria-label="Close settings">×</button>
         <p class="eyebrow accent-label">Private connection</p><h2 id="settingsTitle">Connect your music desk.</h2>
-        <p class="settings-intro">Add your own Google Cloud credentials. They stay in this browser and are used only with Google’s APIs.</p>
-        <label class="field-label" for="apiKeyInput">YouTube Data API key</label><input class="settings-input" id="apiKeyInput" type="password" placeholder="AIza..." autocomplete="off" />
+        <p class="settings-intro">YouTube search is secured on the server. Only your Google OAuth client ID is entered here; the API key belongs in Vercel environment variables.</p>
         <label class="field-label" for="clientIdInput">Google OAuth client ID</label><input class="settings-input" id="clientIdInput" type="text" placeholder="...apps.googleusercontent.com" autocomplete="off" />
         <div class="settings-actions"><button class="secondary-button" id="saveSettings">Save credentials</button><button class="primary-button" id="connectGoogle">Connect Google</button></div>
         <button class="import-button" id="importPlaylists">Import my YouTube playlists</button><p class="settings-status" id="settingsStatus">Not connected yet.</p>
