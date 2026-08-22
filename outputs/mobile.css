@@ -1,0 +1,74 @@
+@media (max-width: 740px) {
+  html, body { overflow-x: hidden; }
+  body { font-size: 12px; }
+  .sidebar { padding: 15px 16px 12px; }
+  .brand { margin-bottom: 13px; font-size: 18px; }
+  .primary-nav { width: 100%; gap: 5px; }
+  .nav-item { flex: 1; justify-content: center; min-height: 39px; padding: 9px 6px; font-size: 10px; }
+  .nav-icon { font-size: 14px; width: auto; }
+  .main-shell { padding: 0 16px 168px; }
+  .topbar { min-height: 101px; height: auto; padding: 14px 0 12px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: 26px 39px; gap: 12px; align-items: center; }
+  .breadcrumbs { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .breadcrumbs .muted, .crumb-separator { display: none; }
+  .topbar-actions { gap: 8px; }
+  .topbar-actions .icon-button { display: none; }
+  .search-shell { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; height: 39px; }
+  .search-shell input { font-size: 11px; }
+  .search-submit { padding: 7px 2px 7px 9px; min-width: 28px; }
+  .browse-hero { min-height: 272px; padding: 24px 0 30px; align-items: flex-start; }
+  .browse-hero h1 { font-size: clamp(46px, 15vw, 66px); }
+  .browse-hero .hero-copy { max-width: 260px; line-height: 1.6; margin-top: 18px; }
+  .browse-hero .hero-orbit { position: absolute; right: -33px; bottom: -25px; width: 145px; height: 145px; opacity: .75; }
+  .browse-hero .orbit-core { inset: 49px; }
+  .browse-hero .ring-two { inset: 25px; }
+  .browse-toolbar { padding: 12px 0; margin-bottom: 27px; }
+  .browse-tabs { width: calc(100vw - 32px); margin-right: -16px; padding-right: 16px; overflow-x: auto; scrollbar-width: none; }
+  .browse-tabs::-webkit-scrollbar { display: none; }
+  .browse-tab { min-height: 36px; padding: 8px 12px; white-space: nowrap; }
+  .filter-group { margin-top: 11px; min-height: 32px; }
+  .filter-group select { min-height: 32px; }
+  .section-heading { margin-bottom: 15px; }
+  .section-heading h2 { font-size: 19px; }
+  .results-meta { max-width: 110px; text-align: right; }
+  .result-card { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; min-height: 76px; padding: 12px 0; }
+  .result-thumb { width: 58px; height: 52px; }
+  .result-copy h3 { font-size: 12px; line-height: 1.25; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .result-copy p { font-size: 9px; }
+  .result-action { width: 33px; height: 33px; min-width: 33px; }
+  .secondary-column { margin-top: 42px; }
+  .queue-card { padding: 0 14px; }
+  .queue-row { min-height: 60px; padding: 12px 0; }
+  .queue-copy strong { font-size: 10px; }
+  .queue-add { min-height: 49px; }
+  .mini-note { margin-top: 17px; }
+  .library-panel { margin-top: 30px; }
+  .library-grid { gap: 22px; }
+  .player-bar { height: 122px; padding: 12px 16px 10px; }
+  .now-playing { height: 35px; padding-right: 2px; }
+  .now-playing .mini-art { width: 36px; height: 36px; }
+  .now-playing strong { max-width: 205px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .now-playing small { max-width: 205px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .now-playing .control-button { margin-left: auto; }
+  .control-row { top: 54px; right: 16px; gap: 12px; }
+  .control-row .control-button:first-child, .control-row .control-button:last-child { display: none; }
+  .main-play { width: 31px; height: 31px; }
+  .player-controls { max-width: none; }
+  .player-progress { margin-top: 15px; padding-right: 4px; }
+  .player-tools { display: none; }
+  .settings-panel { width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; padding: 26px 20px 22px; }
+  .settings-panel h2 { font-size: 25px; }
+  .settings-actions { flex-direction: column; }
+  .primary-button, .secondary-button, .import-button { min-height: 42px; }
+}
+
+@media (max-width: 390px) {
+  .main-shell { padding-left: 13px; padding-right: 13px; }
+  .sidebar { padding-left: 13px; padding-right: 13px; }
+  .browse-tabs { width: calc(100vw - 26px); margin-right: -13px; padding-right: 13px; }
+  .browse-hero h1 { font-size: 45px; }
+  .result-card { grid-template-columns: 50px minmax(0, 1fr) auto; }
+  .result-thumb { width: 50px; height: 48px; }
+  .result-action { width: 30px; min-width: 30px; height: 30px; }
+  .now-playing strong, .now-playing small { max-width: 160px; }
+}
+
