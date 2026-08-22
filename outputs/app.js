@@ -103,7 +103,7 @@ function openLocalPlaylist(id, title) {
 
 function renderPlaylistPicker() {
   const localPlaylists = state.playlists.filter((playlist) => playlist.local);
-  $('#playlistPickerList').innerHTML = localPlaylists.length ? localPlaylists.map((playlist) => `<button class="playlist-pick-item" data-pick-playlist="${escapeHtml(playlist.id)}"><span>${escapeHtml(playlist.title)}</span><small>${playlist.tracks.length} tracks</small></button>`).join('') : '<p class="saved-empty">No personal playlists yet.</p>';
+  $('#playlistPickerList').innerHTML = localPlaylists.length ? localPlaylists.map((playlist) => `<button class="playlist-pick-item" data-pick-playlist="${escapeHtml(playlist.id)}"><span>${escapeHtml(playlist.title)}</span><small>${(playlist.tracks || []).length} tracks</small></button>`).join('') : '<p class="saved-empty">No personal playlists yet.</p>';
 }
 
 function openPlaylistPicker(track) {
@@ -120,6 +120,7 @@ function closePlaylistPicker() { $('#playlistPicker').hidden = true; pickerTrack
 function addToLocalPlaylist(id) {
   const playlist = state.playlists.find((item) => item.id === id);
   if (!playlist || !pickerTrack) return;
+  playlist.tracks = playlist.tracks || [];
   if (!playlist.tracks.some((track) => trackKey(track) === trackKey(pickerTrack))) playlist.tracks.push(pickerTrack);
   saveState(); renderPlaylists(); closePlaylistPicker(); showToast(`Added to “${playlist.title}”.`);
 }
