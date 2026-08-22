@@ -4,17 +4,14 @@ Open `index.html` in a browser to use the personal music desk.
 
 This version is a UI prototype with demo data. It includes:
 
-- responsive personal music dashboard
-- library search
-- demo library and playlists
-- queue management and remove/clear actions
-- queue state saved in the browser between refreshes
-- Google OAuth connection flow
-- YouTube Data API search and playlist import
+- live YouTube search across music videos, videos, playlists, and channels
+- music region filters and trending music
+- paginated search with load-more results
+- playlist and channel browsing
 - official YouTube IFrame playback with progress and next/previous controls
-- browser-local favorites, notes, history, and custom playlists
-- next, previous, shuffle, repeat, play/pause, and keyboard shortcuts
-- favorites feedback and local-mode messaging
+- queue management, favorites, notes, and listening history
+- Google OAuth playlist import
+- browser-local persistence for personal data
 
 ## Connect YouTube
 
