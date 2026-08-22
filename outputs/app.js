@@ -108,6 +108,15 @@ function openLocalPlaylist(id, title) {
   renderLibrary();
 }
 
+function playLocalPlaylist() {
+  const playlist = state.playlists.find((item) => item.id === activeLibraryPlaylistId && item.local);
+  const tracks = playlist?.tracks || [];
+  if (!tracks.length) return showToast('Add songs before playing this playlist.');
+  state.queue = tracks.slice(1);
+  renderQueue();
+  playTrack(tracks[0]);
+}
+
 function renderPlaylistPicker() {
   const localPlaylists = state.playlists.filter((playlist) => playlist.local);
   $('#playlistPickerList').innerHTML = localPlaylists.length ? localPlaylists.map((playlist) => `<button class="playlist-pick-item" data-pick-playlist="${escapeHtml(playlist.id)}"><span>${escapeHtml(playlist.title)}</span><small>${(playlist.tracks || []).length} tracks</small></button>`).join('') : '<p class="saved-empty">No personal playlists yet.</p>';
@@ -151,6 +160,7 @@ function renderLibrary() {
   $('#libraryDetail').hidden = !activePlaylist;
   if (activePlaylist) {
     const tracks = activePlaylist.tracks || [];
+    $('#libraryPlayPlaylist').disabled = !tracks.length;
     $('#libraryDetailTitle').textContent = activePlaylist.title;
     $('#libraryDetailMeta').textContent = `${tracks.length} ${tracks.length === 1 ? 'song' : 'songs'}`;
     $('#libraryTrackList').innerHTML = tracks.length ? tracks.map((track, index) => `<article class="library-track-row" data-library-track-index="${index}"><div class="library-track-thumb">${thumbnailMarkup(track)}</div><div class="library-track-copy"><strong>${escapeHtml(track.title)}</strong><small>${escapeHtml(track.artist || 'YouTube')}</small></div><button class="library-track-remove" data-remove-library-track="${index}" aria-label="Remove ${escapeHtml(track.title)} from ${escapeHtml(activePlaylist.title)}">×</button></article>`).join('') : '<div class="library-track-empty"><strong>This playlist is empty.</strong><p>Use Browse and the ••• menu to add songs here.</p></div>';
@@ -326,6 +336,7 @@ $('#newPlaylist').addEventListener('click', createPlaylistFromPrompt); $('#newPl
 $('#remotePlaylists').addEventListener('click', (event) => { const remote = event.target.closest('[data-remote-playlist]'); const local = event.target.closest('[data-local-playlist]'); if (remote) openPlaylist(remote.dataset.remotePlaylist, remote.dataset.playlistTitle); if (local) openLocalPlaylist(local.dataset.localPlaylist, local.dataset.playlistTitle); });
 $('#libraryPlaylists').addEventListener('click', (event) => { const playlist = event.target.closest('[data-library-playlist]'); if (playlist) openLocalPlaylist(playlist.dataset.libraryPlaylist, playlist.dataset.playlistTitle); });
 $('#libraryDetailBack').addEventListener('click', () => { activeLibraryPlaylistId = null; renderLibrary(); }); $('#libraryAddSongs').addEventListener('click', () => showView('browse')); $('#libraryTrackList').addEventListener('click', (event) => { const remove = event.target.closest('[data-remove-library-track]'); const row = event.target.closest('[data-library-track-index]'); const playlist = state.playlists.find((item) => item.id === activeLibraryPlaylistId); if (!playlist) return; if (remove) { playlist.tracks.splice(Number(remove.dataset.removeLibraryTrack), 1); saveState(); renderLibrary(); showToast('Removed from playlist.'); return; } if (row) playTrack(playlist.tracks[Number(row.dataset.libraryTrackIndex)]); });
+$('#libraryPlayPlaylist').addEventListener('click', playLocalPlaylist);
 $('#playlistPickerClose').addEventListener('click', closePlaylistPicker); document.querySelector('[data-close-playlist-picker]').addEventListener('click', closePlaylistPicker); $('#playlistPickerList').addEventListener('click', (event) => { const pick = event.target.closest('[data-pick-playlist]'); if (pick) addToLocalPlaylist(pick.dataset.pickPlaylist); }); $('#createPlaylistFromPicker').addEventListener('click', () => { const title = $('#newPlaylistName').value; if (!title.trim()) return; createLocalPlaylist(title); $('#newPlaylistName').value = ''; renderPlaylistPicker(); });
 $('#menuAddPlaylist').addEventListener('click', () => { const track = menuTrack; closeTrackMenu(); openPlaylistPicker(track); }); $('#menuAddQueue').addEventListener('click', () => { if (!menuTrack) return; state.queue.push(menuTrack); renderQueue(); showToast('Added to queue.'); closeTrackMenu(); }); document.addEventListener('click', (event) => { if (!event.target.closest('#trackMenu') && !event.target.closest('[data-menu-index]')) closeTrackMenu(); });
 $('#recommendationList').addEventListener('click', (event) => { const play = event.target.closest('[data-recommendation-index]'); const add = event.target.closest('[data-recommendation-add-index]'); if (play) playTrack(recommendationItems[Number(play.dataset.recommendationIndex)]); if (add) { state.queue.push(recommendationItems[Number(add.dataset.recommendationAddIndex)]); renderQueue(); showToast('Added to queue.'); } }); $('#refreshRecommendations').addEventListener('click', () => loadRecommendations(recommendationSeed || currentTrack || currentResults.find((item) => item.kind === 'video')));
