@@ -18,18 +18,18 @@ let lastQuery = '';
 function getSavedState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    return { apiKey: saved.apiKey || '', clientId: saved.clientId || '', accessToken: saved.accessToken || '', queue: Array.isArray(saved.queue) ? saved.queue : [], favorites: Array.isArray(saved.favorites) ? saved.favorites : [], history: Array.isArray(saved.history) ? saved.history : [], notes: saved.notes || {}, playlists: Array.isArray(saved.playlists) ? saved.playlists : [] };
-  } catch { return { apiKey: '', clientId: '', accessToken: '', queue: [], favorites: [], history: [], notes: {}, playlists: [] }; }
+    return { clientId: saved.clientId || '', accessToken: saved.accessToken || '', queue: Array.isArray(saved.queue) ? saved.queue : [], favorites: Array.isArray(saved.favorites) ? saved.favorites : [], history: Array.isArray(saved.history) ? saved.history : [], notes: saved.notes || {}, playlists: Array.isArray(saved.playlists) ? saved.playlists : [] };
+  } catch { return { clientId: '', accessToken: '', queue: [], favorites: [], history: [], notes: {}, playlists: [] }; }
 }
 
 const state = getSavedState();
 
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState() { const { apiKey, ...safeState } = state; localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState)); }
 function trackKey(track) { return track?.videoId || `${track?.title || ''}::${track?.artist || ''}`; }
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[character])); }
 function formatSeconds(seconds) { if (!Number.isFinite(seconds)) return '0:00'; return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
 function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('visible'); window.clearTimeout(showToast.timeout); showToast.timeout = window.setTimeout(() => toast.classList.remove('visible'), 2600); }
-function hasApiKey() { return Boolean(state.apiKey); }
+function hasApiKey() { return true; }
 function hasGoogleConnection() { return Boolean(state.accessToken); }
 
 function thumbnailMarkup(item) { return item.thumbnail ? `<img src="${escapeHtml(item.thumbnail)}" alt="" />` : '<span>♫</span>'; }
@@ -121,10 +121,12 @@ function nextTrack() { if (state.queue.length) { const next = state.queue.shift(
 function previousTrack() { if (playerReady && player.getCurrentTime() > 5) return player.seekTo(0); const previous = state.history[1]?.track; if (previous) playTrack(previous); else showToast('No previous track yet.'); }
 
 async function apiGet(endpoint, authenticated = false) {
-  const joiner = endpoint.includes('?') ? '&' : '?';
-  const url = `${endpoint}${joiner}${authenticated ? '' : `key=${encodeURIComponent(state.apiKey)}`}`;
+  const upstream = new URL(endpoint);
+  const action = upstream.pathname.endsWith('/search') ? 'search' : upstream.searchParams.get('chart') ? 'trending' : upstream.pathname.endsWith('/playlistItems') ? 'playlist' : upstream.pathname.endsWith('/playlists') ? 'playlists' : 'search';
+  const params = new URLSearchParams(upstream.search);
+  params.set('action', action);
   const headers = authenticated ? { Authorization: `Bearer ${state.accessToken}` } : {};
-  const response = await fetch(url, { headers });
+  const response = await fetch(`/api/youtube?${params.toString()}`, { headers });
   if (response.status === 401) { state.accessToken = ''; saveState(); setConnectionState(); }
   if (!response.ok) throw new Error('YouTube request failed');
   return response.json();
@@ -173,7 +175,7 @@ async function connectGoogle() {
 
 function toggleFavorite() { if (!currentTrack) return showToast('Play a result before saving it.'); const key = trackKey(currentTrack); state.favorites = state.favorites.includes(key) ? state.favorites.filter((item) => item !== key) : [...state.favorites, key]; saveState(); updateCurrentUI(); renderLibrary(); showToast(state.favorites.includes(key) ? 'Saved to favorites.' : 'Removed from favorites.'); }
 function addNote() { if (!currentTrack) return; const key = trackKey(currentTrack); const note = window.prompt(`Note for “${currentTrack.title}”`, state.notes[key] || ''); if (note === null) return; if (note.trim()) state.notes[key] = note.trim(); else delete state.notes[key]; saveState(); showToast(note.trim() ? 'Note saved on this device.' : 'Note removed.'); }
-function openSettings() { $('#apiKeyInput').value = state.apiKey; $('#clientIdInput').value = state.clientId; setConnectionState(); $('#settingsModal').hidden = false; $('#apiKeyInput').focus(); }
+function openSettings() { $('#clientIdInput').value = state.clientId; setConnectionState(); $('#settingsModal').hidden = false; $('#clientIdInput').focus(); }
 function closeSettings() { $('#settingsModal').hidden = true; }
 function showView(view) { $('#libraryPanel').hidden = view !== 'library'; document.querySelector('.browse-grid').hidden = view === 'library'; $('.browse-hero').hidden = view === 'library'; $('.browse-toolbar').hidden = view === 'library'; $('#breadcrumbTitle').textContent = view[0].toUpperCase() + view.slice(1); if (view === 'library') renderLibrary(); if (view === 'home') { $('#libraryPanel').hidden = false; $('.browse-hero').hidden = false; $('.browse-toolbar').hidden = true; document.querySelector('.browse-grid').hidden = false; $('#resultsHeading').textContent = 'Your listening space'; renderSetupState('Search YouTube to start building your personal library.'); } }
 
@@ -194,7 +196,7 @@ document.querySelectorAll('.browse-tab').forEach((tab) => tab.addEventListener('
 $('#playPause').addEventListener('click', async () => { if (!currentTrack) return; try { await ensurePlayer(); if (isPlaying) player.pauseVideo(); else player.playVideo(); } catch { showToast('The official player could not load.'); } });
 $('#next').addEventListener('click', nextTrack); $('#previous').addEventListener('click', previousTrack); $('#clearQueue').addEventListener('click', () => { state.queue = []; renderQueue(); showToast('Queue cleared.'); }); $('#addQueue').addEventListener('click', () => { if (currentResults[0]) { state.queue.push(currentResults[0]); renderQueue(); showToast('Added to queue.'); } else showToast('Search for a result first.'); }); $('#queueToggle').addEventListener('click', () => document.querySelector('.secondary-column').scrollIntoView({ behavior: 'smooth', block: 'center' }));
 $('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings); $('#importShortcut').addEventListener('click', importPlaylists);
-$('#saveSettings').addEventListener('click', () => { state.apiKey = $('#apiKeyInput').value.trim(); state.clientId = $('#clientIdInput').value.trim(); saveState(); setConnectionState(); showToast('Connection settings saved.'); if (state.apiKey) loadTrending(); }); $('#connectGoogle').addEventListener('click', () => { state.apiKey = $('#apiKeyInput').value.trim(); state.clientId = $('#clientIdInput').value.trim(); saveState(); connectGoogle(); }); $('#importPlaylists').addEventListener('click', importPlaylists);
+$('#saveSettings').addEventListener('click', () => { state.clientId = $('#clientIdInput').value.trim(); saveState(); setConnectionState(); showToast('Connection settings saved.'); loadTrending(); }); $('#connectGoogle').addEventListener('click', () => { state.clientId = $('#clientIdInput').value.trim(); saveState(); connectGoogle(); }); $('#importPlaylists').addEventListener('click', importPlaylists);
 document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => { document.querySelectorAll('.nav-item').forEach((item) => item.classList.remove('active')); button.classList.add('active'); showView(button.dataset.view); })); document.querySelector('.dismiss-note').addEventListener('click', (event) => event.currentTarget.closest('.mini-note').remove());
 document.addEventListener('keydown', (event) => { if (event.target.matches('input, textarea, button')) return; if (event.code === 'Space') { event.preventDefault(); $('#playPause').click(); } if (event.code === 'ArrowRight') nextTrack(); if (event.code === 'ArrowLeft') previousTrack(); });
 
