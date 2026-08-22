@@ -15,14 +15,19 @@ This version is a UI prototype with demo data. It includes:
 
 ## Connect YouTube
 
-Open the profile button in the lower-left corner and enter:
+The app now keeps the YouTube API key on the Vercel server. In Vercel, add this environment variable for Production and Preview:
 
-1. A YouTube Data API v3 API key.
-2. A Google OAuth Web client ID.
+```text
+YOUTUBE_API_KEY=your-restricted-key
+```
+
+Do not put the API key in the browser, GitHub, or this repository. Redeploy after saving the variable.
+
+Then open the profile button and enter the Google OAuth Web client ID. Choose **Connect Google** to authorize private playlist access.
 
 Enable the YouTube Data API v3 in Google Cloud Console and add the page origin to the OAuth client’s allowed JavaScript origins. Then save the credentials and choose **Connect Google**.
 
-Credentials and personal state are kept in this browser. Use a local web server rather than opening the file directly if your OAuth client rejects the `file://` origin.
+The OAuth access token and personal library are still browser-local in this stage. A database-backed session layer is the next step for syncing favorites, notes, queue, and history across devices.
 
 Keyboard shortcuts: `Space` toggles playback, `←` goes to the previous track, and `→` goes to the next track.
 
