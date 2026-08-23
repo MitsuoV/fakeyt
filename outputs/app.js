@@ -208,7 +208,7 @@ async function importPlaylistFromUrl(event) {
     let pages = 1;
     const maxImportPages = channelTarget ? 100 : 4;
     while (pageToken && pages < maxImportPages) {
-      const page = await apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50&pageToken=${encodeURIComponent(pageToken)}`);
+      const page = await apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(importId)}&maxResults=50&pageToken=${encodeURIComponent(pageToken)}`);
       items = items.concat(page.items || []);
       pageToken = page.nextPageToken || '';
       pages += 1;
