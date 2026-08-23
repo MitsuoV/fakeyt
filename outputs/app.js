@@ -154,6 +154,20 @@ function extractPlaylistId(value) {
   } catch { return ''; }
 }
 
+function extractChannelTarget(value) {
+  try {
+    const url = new URL(value.trim());
+    const parts = url.pathname.split('/').filter(Boolean);
+    const channelIndex = parts.findIndex((part) => part.toLowerCase() === 'channel');
+    if (channelIndex >= 0 && parts[channelIndex + 1]) return { type: 'channelId', value: parts[channelIndex + 1] };
+    const userIndex = parts.findIndex((part) => part.toLowerCase() === 'user');
+    if (userIndex >= 0 && parts[userIndex + 1]) return { type: 'username', value: parts[userIndex + 1] };
+    const handle = parts.find((part) => part.startsWith('@'));
+    if (handle) return { type: 'handle', value: handle };
+  } catch { /* invalid URL is handled by the caller */ }
+  return null;
+}
+
 function setImportStatus(message, isError = false) {
   const status = $('#playlistImportStatus');
   status.textContent = message;
@@ -165,16 +179,30 @@ async function importPlaylistFromUrl(event) {
   const input = $('#playlistImportUrl');
   const submit = $('#playlistImportSubmit');
   const playlistId = extractPlaylistId(input.value);
-  if (!playlistId) return setImportStatus('Paste a valid YouTube playlist link containing a list= value.', true);
+  const channelTarget = extractChannelTarget(input.value);
+  if (!playlistId && !channelTarget) return setImportStatus('Paste a valid YouTube playlist or artist channel link.', true);
   submit.disabled = true;
-  setImportStatus('Importing playlist…');
+  setImportStatus(channelTarget ? 'Finding the artist’s uploads…' : 'Importing playlist…');
   try {
+    let importId = playlistId;
+    let title = 'Imported playlist';
+    let importedFrom = playlistId;
+    if (channelTarget) {
+      const params = new URLSearchParams({ action: 'channel', maxResults: '1' });
+      params.set(channelTarget.type, channelTarget.value);
+      const channelData = await apiGet(`https://www.googleapis.com/youtube/v3/channels?${params.toString()}`);
+      const channel = channelData.items?.[0];
+      importId = channel?.contentDetails?.relatedPlaylists?.uploads || '';
+      if (!channel || !importId) throw new Error('That artist channel could not be found or has no public uploads.');
+      title = `${channel.snippet?.title || 'Artist'} — all songs`;
+      importedFrom = `channel:${channel.id}`;
+    }
     const [metadata, firstPage] = await Promise.all([
-      apiGet(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${encodeURIComponent(playlistId)}&maxResults=1&mine=false`),
-      apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50`)
+      apiGet(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${encodeURIComponent(importId)}&maxResults=1&mine=false`),
+      apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(importId)}&maxResults=50`)
     ]);
     const playlistInfo = metadata.items?.[0];
-    if (!playlistInfo) throw new Error('That playlist could not be found or is not public.');
+    if (!playlistInfo && !channelTarget) throw new Error('That playlist could not be found or is not public.');
     let items = firstPage.items || [];
     let pageToken = firstPage.nextPageToken || '';
     let pages = 1;
@@ -185,8 +213,8 @@ async function importPlaylistFromUrl(event) {
       pages += 1;
     }
     const tracks = items.filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url, tone: 'coral' }));
-    const title = playlistInfo.snippet.title || 'Imported playlist';
-    state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom: playlistId, tracks });
+    if (!channelTarget) title = playlistInfo.snippet.title || title;
+    state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom, tracks });
     saveState(); renderPlaylists(); renderLibrary(); input.value = ''; setImportStatus(`${tracks.length} ${tracks.length === 1 ? 'song' : 'songs'} imported from “${title}”.`); showToast(`Imported “${title}”.`);
   } catch (error) {
     setImportStatus(error.message || 'The playlist could not be imported. Check the link and try again.', true);
@@ -349,7 +377,7 @@ function previousTrack() { if (playerReady && player.getCurrentTime() > 5) retur
 
 async function apiGet(endpoint, authenticated = false) {
   const upstream = new URL(endpoint);
-  const action = upstream.pathname.endsWith('/search') ? 'search' : upstream.searchParams.get('chart') ? 'trending' : upstream.pathname.endsWith('/playlistItems') ? 'playlist' : upstream.pathname.endsWith('/playlists') ? 'playlists' : 'search';
+  const action = upstream.pathname.endsWith('/search') ? 'search' : upstream.searchParams.get('chart') ? 'trending' : upstream.pathname.endsWith('/playlistItems') ? 'playlist' : upstream.pathname.endsWith('/playlists') ? 'playlists' : upstream.pathname.endsWith('/channels') ? 'channel' : 'search';
   const params = new URLSearchParams(upstream.search);
   params.set('action', action);
   const headers = authenticated ? { Authorization: `Bearer ${state.accessToken}` } : {};
