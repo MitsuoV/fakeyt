@@ -248,7 +248,20 @@ function loadScript(src, id) {
 }
 
 function startProgressTimer() {
-  window.clearInterval(progressTimer); progressTimer = window.setInterval(() => { if (!playerReady || !player) return; const current = player.getCurrentTime(); const duration = player.getDuration(); const fill = $('.player-progress .progress-fill'); if (fill && duration) fill.style.width = `${(current / duration) * 100}%`; const labels = document.querySelectorAll('.player-progress span'); if (labels.length === 2) { labels[0].textContent = formatSeconds(current); labels[1].textContent = formatSeconds(duration); } }, 1000);
+  window.clearInterval(progressTimer); progressTimer = window.setInterval(() => { if (!playerReady || !player) return; const current = player.getCurrentTime(); const duration = player.getDuration(); const fill = $('.player-progress .progress-fill'); const seek = $('#progressSeek'); const percent = duration ? (current / duration) * 100 : 0; if (fill && duration) fill.style.width = `${percent}%`; if (seek && !seek.matches(':active')) { seek.value = String(percent); seek.disabled = !duration; } const labels = document.querySelectorAll('.player-progress span'); if (labels.length === 2) { labels[0].textContent = formatSeconds(current); labels[1].textContent = formatSeconds(duration); } }, 250);
+}
+
+function previewSeek() {
+  const seek = $('#progressSeek');
+  const fill = $('.player-progress .progress-fill');
+  if (seek && fill) fill.style.width = `${seek.value}%`;
+}
+
+function seekToPosition() {
+  const seek = $('#progressSeek');
+  if (!seek || !playerReady || !player) return;
+  const duration = player.getDuration();
+  if (duration) player.seekTo((Number(seek.value) / 100) * duration, true);
 }
 
 function ensurePlayer() {
@@ -383,6 +396,7 @@ $('#searchInput').addEventListener('input', () => { window.clearTimeout(searchTi
 $('#searchSubmit').addEventListener('click', () => searchYouTube(true));
 $('#loadMore').addEventListener('click', () => searchYouTube(false));
 $('#playPause').addEventListener('click', async () => { if (!currentTrack) return; try { await ensurePlayer(); if (isPlaying) player.pauseVideo(); else player.playVideo(); } catch { showToast('The official player could not load.'); } });
+$('#progressSeek').addEventListener('input', previewSeek); $('#progressSeek').addEventListener('change', seekToPosition);
 $('#next').addEventListener('click', nextTrack); $('#previous').addEventListener('click', previousTrack);
 $('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings);
 $('#newPlaylist').addEventListener('click', createPlaylistFromPrompt); $('#newPlaylistLibrary').addEventListener('click', createPlaylistFromPrompt);
