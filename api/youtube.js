@@ -48,6 +48,14 @@ module.exports = async function handler(request, response) {
     else params.set('mine', query.mine === 'false' ? 'false' : 'true');
     addIfPresent(params, 'maxResults', query.maxResults || '50');
     addIfPresent(params, 'pageToken', query.pageToken);
+  } else if (action === 'channel') {
+    resource = 'channels';
+    params.set('part', 'snippet,contentDetails');
+    if (query.channelId) addIfPresent(params, 'id', query.channelId);
+    else if (query.handle) addIfPresent(params, 'forHandle', query.handle.startsWith('@') ? query.handle : `@${query.handle}`);
+    else if (query.username) addIfPresent(params, 'forUsername', query.username);
+    else return response.status(400).json({ error: 'A YouTube channel ID, handle, or username is required.' });
+    addIfPresent(params, 'maxResults', query.maxResults || '1');
   } else {
     return response.status(400).json({ error: 'Unsupported YouTube action.' });
   }
