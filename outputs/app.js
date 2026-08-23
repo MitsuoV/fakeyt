@@ -196,6 +196,13 @@ async function importPlaylistFromUrl(event) {
       if (!channel || !importId) throw new Error('That artist channel could not be found or has no public uploads.');
       title = `${channel.snippet?.title || 'Artist'} — all songs`;
       importedFrom = `channel:${channel.id}`;
+      const topSongs = await apiGet(`https://www.googleapis.com/youtube/v3/search?channelId=${encodeURIComponent(channel.id)}&order=viewCount&type=video&videoCategoryId=10&maxResults=25`);
+      const tracks = (topSongs.items || []).filter((item) => item.id?.videoId).map((item) => ({ kind: 'video', videoId: item.id.videoId, title: item.snippet?.title, artist: item.snippet?.channelTitle || channel.snippet?.title || 'YouTube', thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url, tone: 'coral' }));
+      title = `${channel.snippet?.title || 'Artist'} — top songs`;
+      if (!tracks.length) throw new Error('No music videos were found for that artist channel.');
+      state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom, tracks });
+      saveState(); renderPlaylists(); renderLibrary(); input.value = ''; setImportStatus(`${tracks.length} top songs imported from “${title}”.`); showToast(`Imported “${title}”.`);
+      return;
     }
     const [metadata, firstPage] = await Promise.all([
       apiGet(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${encodeURIComponent(importId)}&maxResults=1&mine=false`),
