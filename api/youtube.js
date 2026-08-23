@@ -27,6 +27,9 @@ module.exports = async function handler(request, response) {
     addIfPresent(params, 'maxResults', query.maxResults || '12');
     addIfPresent(params, 'pageToken', query.pageToken);
     addIfPresent(params, 'relatedToVideoId', query.relatedToVideoId);
+    addIfPresent(params, 'channelId', query.channelId);
+    addIfPresent(params, 'order', query.order);
+    addIfPresent(params, 'videoCategoryId', query.videoCategoryId);
     if (kind === 'music') params.set('videoCategoryId', '10');
   } else if (action === 'trending') {
     resource = 'videos';
