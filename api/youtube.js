@@ -11,7 +11,7 @@ module.exports = async function handler(request, response) {
   const action = query.action || 'search';
   const accessToken = request.headers.authorization || '';
   const apiKey = process.env.YOUTUBE_API_KEY;
-  const requiresUser = action === 'playlists';
+  const requiresUser = action === 'playlists' && query.mine !== 'false' && !query.id;
 
   if (!accessToken && !apiKey) return response.status(500).json({ error: 'YOUTUBE_API_KEY is not configured in Vercel.' });
   if (requiresUser && !accessToken) return response.status(401).json({ error: 'Google connection required.' });
@@ -44,7 +44,8 @@ module.exports = async function handler(request, response) {
   } else if (action === 'playlists') {
     resource = 'playlists';
     params.set('part', 'snippet,contentDetails');
-    params.set('mine', 'true');
+    if (query.id) addIfPresent(params, 'id', query.id);
+    else params.set('mine', query.mine === 'false' ? 'false' : 'true');
     addIfPresent(params, 'maxResults', query.maxResults || '50');
     addIfPresent(params, 'pageToken', query.pageToken);
   } else {
