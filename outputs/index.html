@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="library-detail.css" />
     <link rel="stylesheet" href="seekbar.css" />
     <link rel="stylesheet" href="brand-revamp.css" />
+    <link rel="stylesheet" href="qol.css" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -50,7 +51,7 @@
     <main id="main-content" class="main-shell">
       <header class="topbar">
         <div class="breadcrumbs"><span id="breadcrumbTitle">Browse</span><span class="crumb-separator">/</span><span class="muted">live YouTube music</span></div>
-        <label class="search-shell"><span aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Search songs, artists, playlists…" aria-label="Search YouTube music" /><button id="searchSubmit" class="search-submit" aria-label="Search">↵</button></label>
+        <label class="search-shell"><span aria-hidden="true">⌕</span><input id="searchInput" list="recentSearches" type="search" placeholder="Search songs, artists, playlists…" aria-label="Search YouTube music" /><datalist id="recentSearches"></datalist><button id="searchSubmit" class="search-submit" aria-label="Search">↵</button></label>
         <div class="topbar-actions"><button class="icon-button" aria-label="Notifications">♧<span class="notification-dot"></span></button><button class="avatar top-avatar" id="topProfile" aria-label="Open settings">H</button></div>
       </header>
 
@@ -74,7 +75,7 @@
         <form class="playlist-import" id="playlistImportForm" hidden><label for="playlistImportUrl"><span class="eyebrow">YouTube playlist link</span><span class="playlist-import-row"><input id="playlistImportUrl" type="url" inputmode="url" placeholder="https://music.youtube.com/playlist?list=…" autocomplete="off" required /><button class="primary-button" id="playlistImportSubmit" type="submit">Import</button></span><small id="playlistImportStatus" aria-live="polite">Import a public YouTube playlist into your local library.</small></label></form>
         <div class="library-playlists" id="libraryPlaylists"></div>
         <div class="library-detail" id="libraryDetail" hidden>
-          <div class="library-detail-head"><button class="secondary-button library-back" id="libraryDetailBack">‹ Back to playlists</button><div class="library-detail-actions"><button class="primary-button library-play-playlist" id="libraryPlayPlaylist">▶ Play playlist</button><button class="secondary-button library-add-songs" id="libraryAddSongs">＋ Add songs</button></div></div>
+          <div class="library-detail-head"><button class="secondary-button library-back" id="libraryDetailBack">‹ Back to playlists</button><div class="library-detail-actions"><button class="primary-button library-play-playlist" id="libraryPlayPlaylist">▶ Play playlist</button><button class="secondary-button library-add-songs" id="libraryAddSongs">＋ Add songs</button><button class="secondary-button library-manage" id="libraryManagePlaylist" aria-label="Manage playlist">•••</button></div></div>
           <div class="library-detail-title"><p class="eyebrow">Playlist</p><h3 id="libraryDetailTitle"></h3><span id="libraryDetailMeta"></span></div>
           <div class="library-track-list" id="libraryTrackList"></div>
         </div>
@@ -95,7 +96,7 @@
         <button class="modal-close" id="settingsClose" aria-label="Close settings">×</button>
         <p class="eyebrow accent-label">Local library</p><h2 id="settingsTitle">Your music desk, close by.</h2>
         <p class="settings-intro">Your playlists, queue, favorites, notes, and listening history are saved in this browser. Search and playback use the official YouTube player.</p>
-        <p class="settings-status" id="settingsStatus">Local mode is ready.</p>
+        <p class="settings-status" id="settingsStatus">Local mode is ready.</p><div class="settings-actions"><button class="secondary-button" id="exportLibrary">↓ Export backup</button><button class="secondary-button" id="importLibrary">↑ Import backup</button><button class="secondary-button danger-button" id="resetLibrary">Reset local data</button><input id="importLibraryFile" type="file" accept="application/json" hidden /></div>
       </section>
     </div>
     <div class="settings-modal" id="playlistPicker" hidden>
@@ -111,6 +112,13 @@
     <div class="track-menu" id="trackMenu" hidden>
       <button class="track-menu-item" id="menuAddPlaylist">＋ Add to playlist</button>
       <button class="track-menu-item" id="menuAddQueue">↗ Add to queue</button>
+      <button class="track-menu-item menu-library-action" id="menuRemovePlaylist">− Remove from playlist</button>
+      <button class="track-menu-item menu-library-action" id="menuMoveUp">↑ Move up</button>
+      <button class="track-menu-item menu-library-action" id="menuMoveDown">↓ Move down</button>
+      <button class="track-menu-item menu-playlist-action" id="menuRenamePlaylist">✎ Rename playlist</button>
+      <button class="track-menu-item menu-playlist-action" id="menuDuplicatePlaylist">＋ Duplicate playlist</button>
+      <button class="track-menu-item menu-playlist-action" id="menuClearPlaylist">⌫ Clear songs</button>
+      <button class="track-menu-item menu-playlist-action danger-menu-item" id="menuDeletePlaylist">× Delete playlist</button>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="app.js"></script>
