@@ -101,6 +101,53 @@ function createPlaylistFromPrompt() {
   if (title?.trim()) createLocalPlaylist(title);
 }
 
+function extractPlaylistId(value) {
+  try {
+    const url = new URL(value.trim());
+    const id = url.searchParams.get('list');
+    return id && /^[A-Za-z0-9_-]{10,}$/.test(id) ? id : '';
+  } catch { return ''; }
+}
+
+function setImportStatus(message, isError = false) {
+  const status = $('#playlistImportStatus');
+  status.textContent = message;
+  status.classList.toggle('error', isError);
+}
+
+async function importPlaylistFromUrl(event) {
+  event.preventDefault();
+  const input = $('#playlistImportUrl');
+  const submit = $('#playlistImportSubmit');
+  const playlistId = extractPlaylistId(input.value);
+  if (!playlistId) return setImportStatus('Paste a valid YouTube playlist link containing a list= value.', true);
+  submit.disabled = true;
+  setImportStatus('Importing playlist…');
+  try {
+    const [metadata, firstPage] = await Promise.all([
+      apiGet(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${encodeURIComponent(playlistId)}&maxResults=1&mine=false`),
+      apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50`)
+    ]);
+    const playlistInfo = metadata.items?.[0];
+    if (!playlistInfo) throw new Error('That playlist could not be found or is not public.');
+    let items = firstPage.items || [];
+    let pageToken = firstPage.nextPageToken || '';
+    let pages = 1;
+    while (pageToken && pages < 4) {
+      const page = await apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50&pageToken=${encodeURIComponent(pageToken)}`);
+      items = items.concat(page.items || []);
+      pageToken = page.nextPageToken || '';
+      pages += 1;
+    }
+    const tracks = items.filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url, tone: 'coral' }));
+    const title = playlistInfo.snippet.title || 'Imported playlist';
+    state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom: playlistId, tracks });
+    saveState(); renderPlaylists(); renderLibrary(); input.value = ''; setImportStatus(`${tracks.length} ${tracks.length === 1 ? 'song' : 'songs'} imported from “${title}”.`); showToast(`Imported “${title}”.`);
+  } catch (error) {
+    setImportStatus(error.message || 'The playlist could not be imported. Check the link and try again.', true);
+  } finally { submit.disabled = false; }
+}
+
 function openLocalPlaylist(id, title) {
   if (!state.playlists.some((playlist) => playlist.id === id && playlist.local)) return;
   activeLibraryPlaylistId = id;
@@ -339,6 +386,7 @@ $('#playPause').addEventListener('click', async () => { if (!currentTrack) retur
 $('#next').addEventListener('click', nextTrack); $('#previous').addEventListener('click', previousTrack);
 $('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings);
 $('#newPlaylist').addEventListener('click', createPlaylistFromPrompt); $('#newPlaylistLibrary').addEventListener('click', createPlaylistFromPrompt);
+$('#importPlaylistToggle').addEventListener('click', () => { const form = $('#playlistImportForm'); form.hidden = !form.hidden; if (!form.hidden) $('#playlistImportUrl').focus(); }); $('#playlistImportForm').addEventListener('submit', importPlaylistFromUrl);
 $('#remotePlaylists').addEventListener('click', (event) => { const remote = event.target.closest('[data-remote-playlist]'); const local = event.target.closest('[data-local-playlist]'); if (remote) openPlaylist(remote.dataset.remotePlaylist, remote.dataset.playlistTitle); if (local) openLocalPlaylist(local.dataset.localPlaylist, local.dataset.playlistTitle); });
 $('#libraryPlaylists').addEventListener('click', (event) => { const playlist = event.target.closest('[data-library-playlist]'); if (playlist) openLocalPlaylist(playlist.dataset.libraryPlaylist, playlist.dataset.playlistTitle); });
 $('#libraryDetailBack').addEventListener('click', () => { activeLibraryPlaylistId = null; renderLibrary(); }); $('#libraryAddSongs').addEventListener('click', () => showView('browse')); $('#libraryTrackList').addEventListener('click', (event) => { const remove = event.target.closest('[data-remove-library-track]'); const row = event.target.closest('[data-library-track-index]'); const playlist = state.playlists.find((item) => item.id === activeLibraryPlaylistId); if (!playlist) return; if (remove) { playlist.tracks.splice(Number(remove.dataset.removeLibraryTrack), 1); saveState(); renderLibrary(); showToast('Removed from playlist.'); return; } if (row) playTrack(playlist.tracks[Number(row.dataset.libraryTrackIndex)]); });
