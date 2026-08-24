@@ -22,6 +22,9 @@ let shuffleEnabled = false;
 let repeatMode = 'off';
 let activePlaybackTracks = [];
 let swipeStartX = 0;
+let mobileSwipeStartX = 0;
+let mobileSwipeStartY = 0;
+let mobileSwipeTracking = false;
 let recommendationItems = [];
 let recommendationSeed = null;
 let currentView = 'home';
@@ -394,6 +397,35 @@ function mirrorMobilePlayerState() {
   ['#mobileShuffle', '#mobileRepeat'].forEach((selector, index) => { const element = $(selector); const source = index === 0 ? $('#shuffle') : $('#repeat'); if (element && source) element.classList.toggle('toggled', source.classList.contains('toggled')); });
 }
 
+function swipeMobilePlaylist(direction) {
+  if (!activePlaybackTracks.length || !currentTrack) return showToast('Swipe is available while a playlist is playing.');
+  const currentIndex = activePlaybackTracks.findIndex((track) => trackKey(track) === trackKey(currentTrack));
+  const nextIndex = currentIndex + direction;
+  if (currentIndex < 0 || !activePlaybackTracks[nextIndex]) return showToast(direction > 0 ? 'You are at the end of this playlist.' : 'You are at the start of this playlist.');
+  const overlay = $('#mobilePlayer');
+  overlay.classList.remove('mobile-swipe-left', 'mobile-swipe-right');
+  void overlay.offsetWidth;
+  overlay.classList.add(direction > 0 ? 'mobile-swipe-left' : 'mobile-swipe-right');
+  playTrack(activePlaybackTracks[nextIndex], true);
+  window.setTimeout(() => overlay.classList.remove('mobile-swipe-left', 'mobile-swipe-right'), 520);
+}
+
+function handleMobilePlayerTouchStart(event) {
+  if (event.target.closest('button, input')) { mobileSwipeTracking = false; return; }
+  const touch = event.changedTouches[0];
+  mobileSwipeStartX = touch.clientX; mobileSwipeStartY = touch.clientY; mobileSwipeTracking = true;
+}
+
+function handleMobilePlayerTouchEnd(event) {
+  if (!mobileSwipeTracking) return;
+  mobileSwipeTracking = false;
+  const touch = event.changedTouches[0];
+  const deltaX = touch.clientX - mobileSwipeStartX;
+  const deltaY = touch.clientY - mobileSwipeStartY;
+  if (Math.abs(deltaX) < 64 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+  swipeMobilePlaylist(deltaX < 0 ? 1 : -1);
+}
+
 function seekToPosition() {
   const seek = $('#progressSeek');
   if (!seek || !playerReady || !player) return;
@@ -550,6 +582,7 @@ $('#mobilePlayerClose').addEventListener('click', closeMobilePlayer);
 $('#mobilePlayPause').addEventListener('click', () => $('#playPause').click());
 $('#mobilePrevious').addEventListener('click', previousTrack); $('#mobileNext').addEventListener('click', nextTrack); $('#mobileShuffle').addEventListener('click', () => { toggleShuffle(); mirrorMobilePlayerState(); }); $('#mobileRepeat').addEventListener('click', () => { toggleRepeat(); mirrorMobilePlayerState(); });
 $('#mobileProgressSeek').addEventListener('input', previewMobileSeek); $('#mobileProgressSeek').addEventListener('change', seekFromMobile);
+$('#mobilePlayer').addEventListener('touchstart', handleMobilePlayerTouchStart, { passive: true }); $('#mobilePlayer').addEventListener('touchend', handleMobilePlayerTouchEnd, { passive: true });
 $('#next').addEventListener('click', nextTrack); $('#previous').addEventListener('click', previousTrack); $('#shuffle').addEventListener('click', toggleShuffle); $('#repeat').addEventListener('click', toggleRepeat);
 $('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings);
 $('#newPlaylist').addEventListener('click', createPlaylistFromPrompt); $('#newPlaylistLibrary').addEventListener('click', createPlaylistFromPrompt);
