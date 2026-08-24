@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="brand-revamp.css" />
     <link rel="stylesheet" href="qol.css?v=mobile-cover-2" />
     <link rel="stylesheet" href="taste-redesign.css?v=1" />
-    <link rel="stylesheet" href="taste-overhaul.css?v=1" />
+    <link rel="stylesheet" href="taste-overhaul.css?v=2" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -89,6 +89,24 @@
       <div class="player-controls"><div class="control-row"><button class="control-button" id="shuffle" aria-label="Toggle shuffle">⤨</button><button class="control-button" id="previous" aria-label="Previous track">|◀</button><button class="main-play" id="playPause" aria-label="Play" disabled>▶</button><button class="control-button" id="next" aria-label="Next track">▶|</button><button class="control-button" id="repeat" aria-label="Toggle repeat">↻</button></div><div class="player-progress"><span>0:00</span><div class="progress-track"><div class="progress-fill" style="width: 0%"></div><input id="progressSeek" class="progress-seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Seek through the current song" disabled /></div><span>0:00</span></div></div>
       <div class="player-tools"><button class="control-button" aria-label="Volume">◖</button><div class="volume-track"><div class="volume-fill"></div></div><button class="control-button" aria-label="Full screen">⛶</button></div>
     </div>
+
+    <section class="mobile-player" id="mobilePlayer" hidden aria-label="Expanded music player">
+      <div class="mobile-player-topline"><span class="eyebrow">NOW PLAYING</span><button class="mobile-player-close" id="mobilePlayerClose" aria-label="Collapse player">⌄</button></div>
+      <div class="mobile-player-art" id="mobilePlayerArt"><span>♪</span></div>
+      <div class="mobile-player-copy"><strong id="mobileNowTitle">Nothing selected</strong><span id="mobileNowArtist">Search YouTube to begin</span></div>
+      <div class="mobile-player-seek">
+        <input id="mobileProgressSeek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Seek through the current song" disabled />
+        <div><span id="mobileCurrentTime">0:00</span><span id="mobileDuration">0:00</span></div>
+      </div>
+      <div class="mobile-player-controls">
+        <button class="control-button" id="mobileShuffle" aria-label="Toggle shuffle">⤨</button>
+        <button class="control-button" id="mobilePrevious" aria-label="Previous track">|◀</button>
+        <button class="main-play" id="mobilePlayPause" aria-label="Play" disabled>▶</button>
+        <button class="control-button" id="mobileNext" aria-label="Next track">▶|</button>
+        <button class="control-button" id="mobileRepeat" aria-label="Toggle repeat">↻</button>
+      </div>
+      <div class="mobile-player-footer"><span>Official YouTube player</span><span class="mobile-player-spark">✦</span></div>
+    </section>
 
     <div class="youtube-anchor" id="youtubePlayer" aria-hidden="true"></div>
     <div id="queueList" hidden></div>
