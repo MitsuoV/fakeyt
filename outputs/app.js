@@ -326,6 +326,12 @@ function updateCurrentUI() {
   $('#nowTitle').textContent = currentTrack?.title || 'Nothing selected';
   $('#nowArtist').textContent = currentTrack?.artist || 'Search YouTube to begin';
   $('#nowThumb').innerHTML = currentTrack ? thumbnailMarkup(currentTrack) : '<span>♪</span>';
+  const mobileControls = ['#mobilePlayPause'];
+  mobileControls.forEach((selector) => { const element = $(selector); if (element) element.disabled = !currentTrack?.videoId; });
+  const mobileTitle = $('#mobileNowTitle'); const mobileArtist = $('#mobileNowArtist'); const mobileArt = $('#mobilePlayerArt');
+  if (mobileTitle) mobileTitle.textContent = currentTrack?.title || 'Nothing selected';
+  if (mobileArtist) mobileArtist.textContent = currentTrack?.artist || 'Search YouTube to begin';
+  if (mobileArt) mobileArt.innerHTML = currentTrack ? thumbnailMarkup(currentTrack) : '<span>♪</span>';
   const liked = currentTrack && state.favorites.includes(trackKey(currentTrack));
   $('#favoriteCurrent').textContent = liked ? '♥' : '♡';
   $('#favoriteCurrent').classList.toggle('liked', Boolean(liked));
@@ -344,13 +350,48 @@ function loadScript(src, id) {
 }
 
 function startProgressTimer() {
-  window.clearInterval(progressTimer); progressTimer = window.setInterval(() => { if (!playerReady || !player) return; const current = player.getCurrentTime(); const duration = player.getDuration(); const fill = $('.player-progress .progress-fill'); const seek = $('#progressSeek'); const percent = duration ? (current / duration) * 100 : 0; state.lastPlayedTrack = currentTrack; state.lastPosition = current; if (Math.floor(current) % 5 === 0) saveState(); if (fill && duration) fill.style.width = `${percent}%`; if (seek && !seek.matches(':active')) { seek.value = String(percent); seek.disabled = !duration; } const labels = document.querySelectorAll('.player-progress span'); if (labels.length === 2) { labels[0].textContent = formatSeconds(current); labels[1].textContent = formatSeconds(duration); } }, 250);
+  window.clearInterval(progressTimer); progressTimer = window.setInterval(() => { if (!playerReady || !player) return; const current = player.getCurrentTime(); const duration = player.getDuration(); const fill = $('.player-progress .progress-fill'); const seek = $('#progressSeek'); const mobileSeek = $('#mobileProgressSeek'); const percent = duration ? (current / duration) * 100 : 0; state.lastPlayedTrack = currentTrack; state.lastPosition = current; if (Math.floor(current) % 5 === 0) saveState(); if (fill && duration) fill.style.width = `${percent}%`; if (seek && !seek.matches(':active')) { seek.value = String(percent); seek.disabled = !duration; } if (mobileSeek && !mobileSeek.matches(':active')) { mobileSeek.value = String(percent); mobileSeek.disabled = !duration; } const labels = document.querySelectorAll('.player-progress span'); if (labels.length === 2) { labels[0].textContent = formatSeconds(current); labels[1].textContent = formatSeconds(duration); } const mobileCurrent = $('#mobileCurrentTime'); const mobileDuration = $('#mobileDuration'); if (mobileCurrent) mobileCurrent.textContent = formatSeconds(current); if (mobileDuration) mobileDuration.textContent = formatSeconds(duration); }, 250);
 }
 
 function previewSeek() {
   const seek = $('#progressSeek');
   const fill = $('.player-progress .progress-fill');
   if (seek && fill) fill.style.width = `${seek.value}%`;
+}
+
+function previewMobileSeek() {
+  const seek = $('#mobileProgressSeek');
+  if (seek) seek.style.setProperty('--mobile-seek-progress', `${seek.value}%`);
+}
+
+function seekFromMobile() {
+  const seek = $('#mobileProgressSeek');
+  if (!seek || !playerReady || !player) return;
+  const duration = player.getDuration();
+  if (duration) player.seekTo((Number(seek.value) / 100) * duration, true);
+}
+
+function openMobilePlayer() {
+  if (!currentTrack?.videoId) return;
+  const overlay = $('#mobilePlayer');
+  if (!overlay) return;
+  overlay.hidden = false;
+  document.body.classList.add('mobile-player-open');
+  requestAnimationFrame(() => overlay.classList.add('is-open'));
+}
+
+function closeMobilePlayer() {
+  const overlay = $('#mobilePlayer');
+  if (!overlay) return;
+  overlay.classList.remove('is-open');
+  document.body.classList.remove('mobile-player-open');
+  window.setTimeout(() => { if (!overlay.classList.contains('is-open')) overlay.hidden = true; }, 380);
+}
+
+function mirrorMobilePlayerState() {
+  const play = $('#mobilePlayPause');
+  if (play) { play.textContent = isPlaying ? '❚❚' : '▶'; play.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play'); }
+  ['#mobileShuffle', '#mobileRepeat'].forEach((selector, index) => { const element = $(selector); const source = index === 0 ? $('#shuffle') : $('#repeat'); if (element && source) element.classList.toggle('toggled', source.classList.contains('toggled')); });
 }
 
 function seekToPosition() {
@@ -362,7 +403,7 @@ function seekToPosition() {
 
 function ensurePlayer() {
   if (playerReady) return Promise.resolve();
-      return new Promise((resolve, reject) => { const createPlayer = () => { player = new window.YT.Player('youtubePlayer', { height: '1', width: '1', videoId: '', playerVars: { controls: 0, playsinline: 1, rel: 0 }, events: { onReady: () => { playerReady = true; resolve(); }, onStateChange: (event) => { if (event.data === window.YT.PlayerState.PLAYING) { isPlaying = true; $('#playPause').textContent = '❚❚'; startProgressTimer(); } if (event.data === window.YT.PlayerState.PAUSED) { isPlaying = false; $('#playPause').textContent = '▶'; } if (event.data === window.YT.PlayerState.ENDED) { if (repeatMode === 'one' && currentTrack) playTrack(currentTrack, true); else nextTrack(); } } } }); }; if (window.YT?.Player) createPlayer(); else { const oldReady = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { oldReady?.(); createPlayer(); }; loadScript('https://www.youtube.com/iframe_api', 'youtube-iframe-api').catch(reject); } });
+      return new Promise((resolve, reject) => { const createPlayer = () => { player = new window.YT.Player('youtubePlayer', { height: '1', width: '1', videoId: '', playerVars: { controls: 0, playsinline: 1, rel: 0 }, events: { onReady: () => { playerReady = true; resolve(); }, onStateChange: (event) => { if (event.data === window.YT.PlayerState.PLAYING) { isPlaying = true; $('#playPause').textContent = '❚❚'; mirrorMobilePlayerState(); startProgressTimer(); } if (event.data === window.YT.PlayerState.PAUSED) { isPlaying = false; $('#playPause').textContent = '▶'; mirrorMobilePlayerState(); } if (event.data === window.YT.PlayerState.ENDED) { if (repeatMode === 'one' && currentTrack) playTrack(currentTrack, true); else nextTrack(); } } } }); }; if (window.YT?.Player) createPlayer(); else { const oldReady = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { oldReady?.(); createPlayer(); }; loadScript('https://www.youtube.com/iframe_api', 'youtube-iframe-api').catch(reject); } });
 }
 
 async function playTrack(track, preservePlaylistPlayback = false) {
@@ -504,6 +545,11 @@ $('#searchSubmit').addEventListener('click', () => searchYouTube(true));
 $('#loadMore').addEventListener('click', () => searchYouTube(false));
 $('#playPause').addEventListener('click', async () => { if (!currentTrack) return; try { await ensurePlayer(); if (isPlaying) player.pauseVideo(); else player.playVideo(); } catch { showToast('The official player could not load.'); } });
 $('#progressSeek').addEventListener('input', previewSeek); $('#progressSeek').addEventListener('change', seekToPosition);
+$('.now-playing').addEventListener('click', (event) => { if (!event.target.closest('button')) openMobilePlayer(); });
+$('#mobilePlayerClose').addEventListener('click', closeMobilePlayer);
+$('#mobilePlayPause').addEventListener('click', () => $('#playPause').click());
+$('#mobilePrevious').addEventListener('click', previousTrack); $('#mobileNext').addEventListener('click', nextTrack); $('#mobileShuffle').addEventListener('click', () => { toggleShuffle(); mirrorMobilePlayerState(); }); $('#mobileRepeat').addEventListener('click', () => { toggleRepeat(); mirrorMobilePlayerState(); });
+$('#mobileProgressSeek').addEventListener('input', previewMobileSeek); $('#mobileProgressSeek').addEventListener('change', seekFromMobile);
 $('#next').addEventListener('click', nextTrack); $('#previous').addEventListener('click', previousTrack); $('#shuffle').addEventListener('click', toggleShuffle); $('#repeat').addEventListener('click', toggleRepeat);
 $('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings);
 $('#newPlaylist').addEventListener('click', createPlaylistFromPrompt); $('#newPlaylistLibrary').addEventListener('click', createPlaylistFromPrompt);
