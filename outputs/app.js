@@ -243,10 +243,16 @@ function playLocalPlaylist() {
   const playlist = state.playlists.find((item) => item.id === activeLibraryPlaylistId && item.local);
   const tracks = playlist?.tracks || [];
   if (!tracks.length) return showToast('Add songs before playing this playlist.');
+  startPlaylistPlayback(tracks, 0);
+}
+
+function startPlaylistPlayback(tracks, index) {
+  if (!Array.isArray(tracks) || !tracks.length || !tracks[index]) return;
   activePlaybackTracks = tracks.slice();
-  state.queue = shuffleEnabled ? shuffleTracks(tracks.slice(1)) : tracks.slice(1);
+  const remaining = tracks.filter((_, trackIndex) => trackIndex !== index);
+  state.queue = shuffleEnabled ? shuffleTracks(remaining) : remaining;
   renderQueue();
-  playTrack(tracks[0], true);
+  playTrack(tracks[index], true);
 }
 
 function renderPlaylistPicker() {
@@ -399,14 +405,26 @@ function mirrorMobilePlayerState() {
 
 function swipeMobilePlaylist(direction) {
   if (!activePlaybackTracks.length || !currentTrack) return showToast('Swipe is available while a playlist is playing.');
-  const currentIndex = activePlaybackTracks.findIndex((track) => trackKey(track) === trackKey(currentTrack));
-  const nextIndex = currentIndex + direction;
-  if (currentIndex < 0 || !activePlaybackTracks[nextIndex]) return showToast(direction > 0 ? 'You are at the end of this playlist.' : 'You are at the start of this playlist.');
+  let nextTrack = null;
+  if (direction > 0 && shuffleEnabled && state.queue.length) {
+    nextTrack = state.queue.shift();
+    renderQueue();
+  } else {
+    const currentIndex = activePlaybackTracks.findIndex((track) => trackKey(track) === trackKey(currentTrack));
+    const nextIndex = currentIndex + direction;
+    nextTrack = direction < 0 && shuffleEnabled ? state.history[1]?.track : activePlaybackTracks[nextIndex];
+    if (!shuffleEnabled && nextTrack) {
+      state.queue = activePlaybackTracks.slice(nextIndex + 1);
+      if (direction < 0) state.queue.unshift(currentTrack);
+      renderQueue();
+    } else if (direction < 0 && nextTrack) state.queue.unshift(currentTrack);
+  }
+  if (!nextTrack) return showToast(direction > 0 ? 'You are at the end of this playlist.' : 'You are at the start of this playlist.');
   const overlay = $('#mobilePlayer');
   overlay.classList.remove('mobile-swipe-left', 'mobile-swipe-right');
   void overlay.offsetWidth;
   overlay.classList.add(direction > 0 ? 'mobile-swipe-left' : 'mobile-swipe-right');
-  playTrack(activePlaybackTracks[nextIndex], true);
+  playTrack(nextTrack, true);
   window.setTimeout(() => overlay.classList.remove('mobile-swipe-left', 'mobile-swipe-right'), 520);
 }
 
@@ -440,6 +458,16 @@ function ensurePlayer() {
 
 async function playTrack(track, preservePlaylistPlayback = false) {
   if (!track?.videoId) return showToast('That result cannot be played here.');
+  if (!preservePlaylistPlayback && currentView === 'library' && activeLibraryPlaylistId) {
+    const playlist = getLocalPlaylist(activeLibraryPlaylistId);
+    const index = playlist?.tracks?.findIndex((item) => trackKey(item) === trackKey(track)) ?? -1;
+    if (index >= 0) {
+      activePlaybackTracks = playlist.tracks.slice();
+      const remaining = playlist.tracks.filter((_, trackIndex) => trackIndex !== index);
+      state.queue = shuffleEnabled ? shuffleTracks(remaining) : remaining;
+      renderQueue();
+    }
+  }
   const resumeAt = trackKey(track) === trackKey(state.lastPlayedTrack) ? state.lastPosition : 0;
   if (!preservePlaylistPlayback) activePlaybackTracks = [];
   setCurrent(track, false);
