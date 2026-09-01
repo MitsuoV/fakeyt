@@ -385,6 +385,7 @@ function openMobilePlayer() {
   const overlay = $('#mobilePlayer');
   if (!overlay) return;
   overlay.hidden = false;
+  mirrorMobilePlayerState();
   document.body.classList.add('mobile-player-open');
   requestAnimationFrame(() => overlay.classList.add('is-open'));
 }
@@ -400,7 +401,7 @@ function closeMobilePlayer() {
 function mirrorMobilePlayerState() {
   const play = $('#mobilePlayPause');
   if (play) { play.textContent = isPlaying ? '❚❚' : '▶'; play.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play'); }
-  ['#mobileShuffle', '#mobileRepeat'].forEach((selector, index) => { const element = $(selector); const source = index === 0 ? $('#shuffle') : $('#repeat'); if (element && source) element.classList.toggle('toggled', source.classList.contains('toggled')); });
+  ['#mobileShuffle', '#mobileRepeat'].forEach((selector, index) => { const element = $(selector); const source = index === 0 ? $('#shuffle') : $('#repeat'); if (!element || !source) return; const active = source.classList.contains('toggled'); element.classList.toggle('toggled', active); element.setAttribute('aria-pressed', String(active)); if (index === 1) element.setAttribute('aria-label', repeatMode === 'off' ? 'Repeat off' : repeatMode === 'all' ? 'Repeat playlist' : 'Repeat song'); });
 }
 
 function swipeMobilePlaylist(direction) {
@@ -480,8 +481,8 @@ function nextTrack() {
   if (repeatMode === 'all' && activePlaybackTracks.length) { state.queue = shuffleEnabled ? shuffleTracks(activePlaybackTracks.slice()) : activePlaybackTracks.slice(); const next = state.queue.shift(); renderQueue(); playTrack(next, true); return; }
   showToast('Your queue is empty. Add a result to keep listening.');
 }
-function toggleShuffle() { shuffleEnabled = !shuffleEnabled; $('#shuffle').classList.toggle('toggled', shuffleEnabled); if (shuffleEnabled && state.queue.length > 1) { state.queue = shuffleTracks(state.queue); renderQueue(); } showToast(shuffleEnabled ? 'Shuffle on.' : 'Shuffle off.'); }
-function toggleRepeat() { repeatMode = repeatMode === 'off' ? 'all' : repeatMode === 'all' ? 'one' : 'off'; $('#repeat').classList.toggle('toggled', repeatMode !== 'off'); $('#repeat').setAttribute('aria-label', `Repeat ${repeatMode}`); showToast(repeatMode === 'off' ? 'Repeat off.' : repeatMode === 'all' ? 'Repeating playlist.' : 'Repeating current song.'); }
+function toggleShuffle() { shuffleEnabled = !shuffleEnabled; $('#shuffle').classList.toggle('toggled', shuffleEnabled); if (shuffleEnabled && state.queue.length > 1) { state.queue = shuffleTracks(state.queue); renderQueue(); } mirrorMobilePlayerState(); showToast(shuffleEnabled ? 'Shuffle on.' : 'Shuffle off.'); }
+function toggleRepeat() { repeatMode = repeatMode === 'off' ? 'all' : repeatMode === 'all' ? 'one' : 'off'; $('#repeat').classList.toggle('toggled', repeatMode !== 'off'); $('#repeat').setAttribute('aria-label', `Repeat ${repeatMode}`); mirrorMobilePlayerState(); showToast(repeatMode === 'off' ? 'Repeat off.' : repeatMode === 'all' ? 'Repeating playlist.' : 'Repeating current song.'); }
 function previousTrack() { if (playerReady && player.getCurrentTime() > 5) return player.seekTo(0); const previous = state.history[1]?.track; if (previous) playTrack(previous); else showToast('No previous track yet.'); }
 
 async function apiGet(endpoint, authenticated = false) {
