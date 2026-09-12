@@ -1,0 +1,20 @@
+{
+  "name": "mitsuo-music-wrapper",
+  "private": true,
+  "version": "1.0.0",
+  "description": "iOS wrapper for Mitsuo's personal YouTube music desk",
+  "scripts": {
+    "ios:add": "npx cap add ios",
+    "ios:sync": "npx cap sync ios",
+    "ios:open": "npx cap open ios",
+    "ios:build": "npx cap build ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
+
