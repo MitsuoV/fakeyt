@@ -41,7 +41,7 @@ module.exports = async function handler(request, response) {
   const sessionSecret = process.env.LOWKEY_SYNC_SESSION_SECRET;
   if (!passphrase || !sessionSecret) return response.status(503).json({ error: 'Playlist sync is not configured yet.' });
 
-  if (request.method === 'POST' && request.query?.action === 'login') {
+  if (request.method === 'POST') {
     const submitted = request.body?.passphrase;
     if (typeof submitted !== 'string' || !timingSafeEqualText(submitted, passphrase)) return response.status(401).json({ error: 'That passphrase did not match.' });
     const expires = String(Date.now() + 60 * 24 * 60 * 60 * 1000);
