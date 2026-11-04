@@ -42,7 +42,145 @@ function getSavedState() {
 const state = getSavedState();
 currentTrack = state.lastPlayedTrack;
 
-function saveState() { const { apiKey, ...safeState } = state; localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState)); }
+let sharedPlaylistsVersion = null;
+let sharedPlaylistsSnapshot = JSON.stringify(state.playlists);
+let sharedPlaylistsDirty = false;
+let sharedSyncTimer = null;
+let sharedSyncBusy = false;
+let sharedSyncMessage = 'Playlists are saved on this device until you connect sync.';
+function saveState() {
+  const { apiKey, ...safeState } = state;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState));
+  const playlistSnapshot = JSON.stringify(state.playlists);
+  if (playlistSnapshot !== sharedPlaylistsSnapshot && sharedPlaylistsVersion !== null) {
+    sharedPlaylistsDirty = true;
+    window.clearTimeout(sharedSyncTimer);
+    sharedSyncTimer = window.setTimeout(() => pushSharedPlaylists(), 500);
+  }
+}
+async function requestSharedLibrary(options = {}) {
+  const response = await fetch('/api/library', { credentials: 'same-origin', ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw Object.assign(new Error(data.error || 'Playlist sync is unavailable.'), { status: response.status, data });
+  return data;
+}
+function updateSyncMessage(message) {
+  sharedSyncMessage = message;
+  const status = $('#settingsStatus');
+  if (status) status.textContent = message;
+  const label = $('#connectionLabel');
+  if (label) label.textContent = sharedPlaylistsVersion === null ? 'Local library' : 'Synced library';
+  const title = $('#syncTitle');
+  const subtitle = $('#syncSubtitle');
+  if (title) title.textContent = sharedPlaylistsVersion === null ? 'Local mode' : 'Shared library';
+  if (subtitle) subtitle.textContent = sharedPlaylistsVersion === null ? 'Saved on this device' : 'Playlists sync across devices';
+}
+function renderSyncConnection() {
+  const input = $('#syncPassphrase');
+  const connect = $('#connectPlaylistSync');
+  const disconnect = $('#disconnectPlaylistSync');
+  if (!input) return;
+  const connected = sharedPlaylistsVersion !== null;
+  input.hidden = connected;
+  connect.hidden = connected;
+  disconnect.hidden = !connected;
+  updateSyncMessage(sharedSyncMessage);
+}
+async function connectSharedLibrary() {
+  const phrase = $('#syncPassphrase').value;
+  if (!phrase) return updateSyncMessage('Enter your shared passphrase to connect this device.');
+  $('#connectPlaylistSync').disabled = true;
+  updateSyncMessage('Connecting to your shared playlists…');
+  try {
+    await requestSharedLibrary({ method: 'POST', body: JSON.stringify({ passphrase: phrase }), headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' });
+    $('#syncPassphrase').value = '';
+    await loadSharedPlaylists(true);
+    renderSyncConnection();
+  } catch (error) {
+    updateSyncMessage(error.status === 401 ? 'That passphrase did not match.' : error.message);
+  } finally { $('#connectPlaylistSync').disabled = false; }
+}
+async function loadSharedPlaylists(migrateLocal = false) {
+  try {
+    const remote = await requestSharedLibrary();
+    if (remote.version === 0 && migrateLocal && state.playlists.length) {
+      sharedPlaylistsVersion = 0;
+      sharedPlaylistsDirty = true;
+      await pushSharedPlaylists();
+    } else {
+      state.playlists = Array.isArray(remote.playlists) ? remote.playlists : [];
+      sharedPlaylistsVersion = remote.version;
+      sharedPlaylistsSnapshot = JSON.stringify(state.playlists);
+      sharedPlaylistsDirty = false;
+      const { apiKey, ...safeState } = state;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState));
+      renderPlaylists(); renderLibrary();
+    }
+    updateSyncMessage('Your playlists are synced across devices.');
+  } catch (error) {
+    if (error.status === 401) {
+      sharedPlaylistsVersion = null;
+      updateSyncMessage('Playlists are saved on this device. Connect sync to share them across devices.');
+    } else updateSyncMessage(error.message);
+  }
+}
+async function refreshSharedPlaylists() {
+  if (sharedPlaylistsVersion === null || sharedSyncBusy || !navigator.onLine) return;
+  if (sharedPlaylistsDirty) return pushSharedPlaylists();
+  try {
+    const remote = await requestSharedLibrary();
+    if (remote.version === sharedPlaylistsVersion) return;
+    if (sharedPlaylistsDirty) return pushSharedPlaylists();
+    state.playlists = Array.isArray(remote.playlists) ? remote.playlists : [];
+    sharedPlaylistsVersion = remote.version;
+    sharedPlaylistsSnapshot = JSON.stringify(state.playlists);
+    sharedPlaylistsDirty = false;
+    const { apiKey, ...safeState } = state;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeState));
+    renderPlaylists(); renderLibrary();
+    updateSyncMessage('Your playlists are synced across devices.');
+  } catch (error) {
+    if (error.status === 401) {
+      sharedPlaylistsVersion = null;
+      updateSyncMessage('Your session expired. Connect sync again to share playlists.');
+      renderSyncConnection();
+    } else updateSyncMessage(error.message);
+  }
+}
+async function pushSharedPlaylists() {
+  if (sharedSyncBusy || sharedPlaylistsVersion === null) return;
+  sharedSyncBusy = true;
+  const payload = JSON.stringify(state.playlists);
+  try {
+    let result;
+    try {
+      result = await requestSharedLibrary({ method: 'PUT', body: JSON.stringify({ version: sharedPlaylistsVersion, playlists: state.playlists }) });
+    } catch (error) {
+      if (error.status !== 409) throw error;
+      sharedPlaylistsVersion = error.data.version;
+      result = await requestSharedLibrary({ method: 'PUT', body: JSON.stringify({ version: sharedPlaylistsVersion, playlists: state.playlists }) });
+    }
+    sharedPlaylistsVersion = result.version;
+    sharedPlaylistsSnapshot = payload;
+    sharedPlaylistsDirty = JSON.stringify(state.playlists) !== payload;
+    updateSyncMessage('Your playlists are synced across devices.');
+  } catch (error) {
+    if (error.status === 401) sharedPlaylistsVersion = null;
+    updateSyncMessage(error.message);
+  } finally {
+    sharedSyncBusy = false;
+    if (sharedPlaylistsDirty) {
+      window.clearTimeout(sharedSyncTimer);
+      sharedSyncTimer = window.setTimeout(() => pushSharedPlaylists(), 200);
+    }
+  }
+}
+async function disconnectSharedLibrary() {
+  try { await requestSharedLibrary({ method: 'DELETE' }); } catch { /* Local data stays available when offline. */ }
+  sharedPlaylistsVersion = null;
+  updateSyncMessage('Disconnected on this device. Shared playlists remain online.');
+  renderSyncConnection();
+}
 function trackKey(track) { return track?.videoId || `${track?.title || ''}::${track?.artist || ''}`; }
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[character])); }
 function formatSeconds(seconds) { if (!Number.isFinite(seconds)) return '0:00'; return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
@@ -323,10 +461,9 @@ function renderLibrary() {
 }
 
 function setConnectionState() {
-  $('#connectionLabel').textContent = 'Local library';
   $('#syncTitle').textContent = 'Local mode';
   $('#syncSubtitle').textContent = 'Saved on this device';
-  $('#settingsStatus').textContent = 'Local mode is ready.';
+  renderSyncConnection();
 }
 
 function updateCurrentUI() {
@@ -544,7 +681,7 @@ function openSettings() { setConnectionState(); $('#settingsModal').hidden = fal
 function closeSettings() { $('#settingsModal').hidden = true; }
 function exportLibrary() { const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), playlists: state.playlists, favorites: state.favorites, notes: state.notes, queue: state.queue, recentSearches: state.recentSearches, lastPlayedTrack: state.lastPlayedTrack, lastPosition: state.lastPosition }, null, 2)], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `lowkey-backup-${new Date().toISOString().slice(0, 10)}.json`; link.click(); URL.revokeObjectURL(link.href); showToast('Backup exported.'); }
 function importLibraryFile(event) { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const backup = JSON.parse(reader.result); if (!Array.isArray(backup.playlists)) throw new Error('Invalid backup'); state.playlists = backup.playlists; state.favorites = Array.isArray(backup.favorites) ? backup.favorites : []; state.notes = backup.notes || {}; state.queue = Array.isArray(backup.queue) ? backup.queue : []; state.recentSearches = Array.isArray(backup.recentSearches) ? backup.recentSearches : []; state.lastPlayedTrack = backup.lastPlayedTrack || null; state.lastPosition = Number(backup.lastPosition) || 0; currentTrack = state.lastPlayedTrack; saveState(); renderRecentSearches(); renderQueue(); renderPlaylists(); renderLibrary(); updateCurrentUI(); closeSettings(); showToast('Backup restored.'); } catch { showToast('That backup file is not valid.'); } event.target.value = ''; }; reader.readAsText(file); }
-function resetLibrary() { if (!window.confirm('Reset playlists, queue, favorites, notes, and history on this device?')) return; state.playlists = []; state.queue = []; state.favorites = []; state.history = []; state.notes = {}; state.recentSearches = []; state.lastPlayedTrack = null; state.lastPosition = 0; currentTrack = null; activeLibraryPlaylistId = null; activePlaybackTracks = []; saveState(); renderRecentSearches(); renderQueue(); renderPlaylists(); renderLibrary(); updateCurrentUI(); closeSettings(); showToast('Local data reset.'); }
+function resetLibrary() { const prompt = sharedPlaylistsVersion === null ? 'Reset playlists, queue, favorites, notes, and history on this device?' : 'Reset shared playlists for every device, plus queue, favorites, notes, and history on this device?'; if (!window.confirm(prompt)) return; state.playlists = []; state.queue = []; state.favorites = []; state.history = []; state.notes = {}; state.recentSearches = []; state.lastPlayedTrack = null; state.lastPosition = 0; currentTrack = null; activeLibraryPlaylistId = null; activePlaybackTracks = []; saveState(); renderRecentSearches(); renderQueue(); renderPlaylists(); renderLibrary(); updateCurrentUI(); closeSettings(); showToast('Library data reset.'); }
 function setActiveView(view) {
   requestSerial += 1;
   currentView = view;
@@ -586,6 +723,10 @@ function showView(view) {
 }
 
 renderQueue(); renderPlaylists(); renderLibrary(); renderRecentSearches(); setConnectionState(); updateCurrentUI(); setActiveView('home');
+loadSharedPlaylists();
+window.setInterval(refreshSharedPlaylists, 15000);
+window.addEventListener('online', refreshSharedPlaylists);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSharedPlaylists(); });
 if (hasApiKey()) loadTrending(); else renderSetupState();
 
 trackListSetup();
@@ -613,7 +754,7 @@ $('#mobilePrevious').addEventListener('click', previousTrack); $('#mobileNext').
 $('#mobileProgressSeek').addEventListener('input', previewMobileSeek); $('#mobileProgressSeek').addEventListener('change', seekFromMobile);
 $('#mobilePlayer').addEventListener('touchstart', handleMobilePlayerTouchStart, { passive: true }); $('#mobilePlayer').addEventListener('touchend', handleMobilePlayerTouchEnd, { passive: true });
 $('#next').addEventListener('click', nextTrack); $('#previous').addEventListener('click', previousTrack); $('#shuffle').addEventListener('click', toggleShuffle); $('#repeat').addEventListener('click', toggleRepeat);
-$('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings);
+$('#favoriteCurrent').addEventListener('click', toggleFavorite); $('#noteCurrent').addEventListener('click', addNote); $('#settingsButton').addEventListener('click', openSettings); $('#topProfile').addEventListener('click', openSettings); $('#settingsClose').addEventListener('click', closeSettings); document.querySelector('[data-close-settings]').addEventListener('click', closeSettings); $('#connectPlaylistSync').addEventListener('click', connectSharedLibrary); $('#syncPassphrase').addEventListener('keydown', (event) => { if (event.key === 'Enter') connectSharedLibrary(); }); $('#disconnectPlaylistSync').addEventListener('click', disconnectSharedLibrary);
 $('#newPlaylist').addEventListener('click', createPlaylistFromPrompt); $('#newPlaylistLibrary').addEventListener('click', createPlaylistFromPrompt);
 $('#importPlaylistToggle').addEventListener('click', () => { const form = $('#playlistImportForm'); form.hidden = !form.hidden; if (!form.hidden) $('#playlistImportUrl').focus(); }); $('#playlistImportForm').addEventListener('submit', importPlaylistFromUrl);
 $('#remotePlaylists').addEventListener('click', (event) => { const remote = event.target.closest('[data-remote-playlist]'); const local = event.target.closest('[data-local-playlist]'); if (remote) openPlaylist(remote.dataset.remotePlaylist, remote.dataset.playlistTitle); if (local) openLocalPlaylist(local.dataset.localPlaylist, local.dataset.playlistTitle); });
@@ -628,4 +769,5 @@ $('#menuPlayNext').addEventListener('click', () => { if (!menuTrack) return; sta
 $('#exportLibrary').addEventListener('click', exportLibrary); $('#importLibrary').addEventListener('click', () => $('#importLibraryFile').click()); $('#importLibraryFile').addEventListener('change', importLibraryFile); $('#resetLibrary').addEventListener('click', resetLibrary);
 document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => { if (button.dataset.view === 'library') activeLibraryPlaylistId = null; showView(button.dataset.view); }));
 document.addEventListener('keydown', (event) => { if (event.target.matches('input, textarea, button')) return; if (event.code === 'Space') { event.preventDefault(); $('#playPause').click(); } if (event.code === 'ArrowRight') nextTrack(); if (event.code === 'ArrowLeft') previousTrack(); });
+
 

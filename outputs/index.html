@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="taste-redesign.css?v=1" />
     <link rel="stylesheet" href="taste-overhaul.css?v=2" />
     <link rel="stylesheet" href="responsive-tablet.css?v=1" />
+    <link rel="stylesheet" href="sync.css?v=1" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -115,9 +116,11 @@
       <div class="settings-backdrop" data-close-settings></div>
       <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
         <button class="modal-close" id="settingsClose" aria-label="Close settings">×</button>
-        <p class="eyebrow accent-label">Local library</p><h2 id="settingsTitle">Your music desk, close by.</h2>
-        <p class="settings-intro">Your playlists, queue, favorites, notes, and listening history are saved in this browser. Search and playback use the official YouTube player.</p>
-        <p class="settings-status" id="settingsStatus">Local mode is ready.</p><div class="settings-actions"><button class="secondary-button" id="exportLibrary">↓ Export backup</button><button class="secondary-button" id="importLibrary">↑ Import backup</button><button class="secondary-button danger-button" id="resetLibrary">Reset local data</button><input id="importLibraryFile" type="file" accept="application/json" hidden /></div>
+        <p class="eyebrow accent-label">Your music desk</p><h2 id="settingsTitle">Your music desk, close by.</h2>
+        <p class="settings-intro">Connect your shared library once on each device. Your playlists will follow you; queue, favorites, notes, and listening history stay on this device.</p>
+        <p class="settings-status" id="settingsStatus">Playlists are saved on this device until you connect sync.</p>
+        <div class="sync-connect-row"><input class="settings-input" id="syncPassphrase" type="password" autocomplete="current-password" placeholder="Shared passphrase" aria-label="Shared playlist passphrase" /><button class="secondary-button" id="connectPlaylistSync" type="button">Connect sync</button><button class="secondary-button" id="disconnectPlaylistSync" type="button" hidden>Disconnect</button></div>
+        <div class="settings-actions"><button class="secondary-button" id="exportLibrary">↓ Export backup</button><button class="secondary-button" id="importLibrary">↑ Import backup</button><button class="secondary-button danger-button" id="resetLibrary">Reset local data</button><input id="importLibraryFile" type="file" accept="application/json" hidden /></div>
       </section>
     </div>
     <div class="settings-modal" id="playlistPicker" hidden>
@@ -146,4 +149,5 @@
     <script src="app.js?v=artist-import-5"></script>
   </body>
 </html>
+
 
