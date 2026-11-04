@@ -156,7 +156,7 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
 .result-card:nth-child(2),.recommendation-card:nth-child(2),.library-playlist-card:nth-child(2),.library-track-row:nth-child(2){animation-delay:.04s}
 .result-card:nth-child(3),.recommendation-card:nth-child(3),.library-playlist-card:nth-child(3),.library-track-row:nth-child(3){animation-delay:.08s}
 
-@media(max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   body{background:var(--bg)}
   .sidebar{position:sticky;top:0;width:100%;height:auto;padding:12px 16px 10px;background:#fffaf0f5;border-right:0;border-bottom:1px solid var(--line);box-shadow:0 8px 22px #b7833c12;z-index:10}
   .brand{display:flex;margin:0 0 12px;font-size:18px}

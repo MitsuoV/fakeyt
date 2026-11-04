@@ -1,5 +1,5 @@
 /* Reference-inspired catalog structure: title, pill rail, then an image-led music list. */
-@media (max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   .sidebar{padding-top:10px;padding-bottom:9px}
   .sidebar .brand{display:none}
   .primary-nav{max-width:310px;margin:0 auto}

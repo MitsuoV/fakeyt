@@ -94,7 +94,7 @@ button:active:not(:disabled),a.result-action:active{transform:translateY(1px) sc
 .heart-button{border-radius:50%;transition:color .2s ease,background .2s ease,transform .2s var(--ease)}
 .heart-button:hover{background:#3a211d;transform:scale(1.08)}
 
-@media (max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   .primary-button,.secondary-button,.import-button{min-height:44px}
   .nav-item{min-height:38px}
   .browse-tab{min-height:36px}

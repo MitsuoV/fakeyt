@@ -171,7 +171,7 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
 .result-card:nth-child(2),.recommendation-card:nth-child(2),.library-playlist-card:nth-child(2),.library-track-row:nth-child(2){animation-delay:.04s}
 .result-card:nth-child(3),.recommendation-card:nth-child(3),.library-playlist-card:nth-child(3),.library-track-row:nth-child(3){animation-delay:.08s}
 
-@media(max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   .sidebar{position:sticky;top:0;width:100%;height:auto;padding:13px 16px 11px;background:var(--charcoal);border-bottom:0;box-shadow:0 10px 25px #69432230}
   .brand{display:flex;margin:0 0 13px;font-size:19px}
   .brand-mark{font-size:21px}
@@ -260,7 +260,7 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
 /* Mobile now-playing surface: the dock stays glanceable, the expanded view gives the song room to breathe. */
 .mobile-player{display:none}
 
-@media(max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   body.mobile-player-open{overflow:hidden}
   .now-playing{cursor:pointer}
   .mobile-player[hidden]{display:none!important}
@@ -304,7 +304,7 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
   @keyframes mobile-swipe-right{0%{opacity:1;transform:translateX(0)}38%{opacity:0;transform:translateX(34px) scale(.98)}39%{opacity:0;transform:translateX(-34px) scale(.98)}100%{opacity:1;transform:translateX(0) scale(1)}}
 }
 
-@media(min-width:741px){.mobile-player{display:none!important}}
+@media (min-width: 1101px) and (pointer: fine){.mobile-player{display:none!important}}
 
 @media(prefers-reduced-motion:reduce){
   .mobile-player:not([hidden]),.mobile-player-art,.mobile-player-copy,.mobile-player-seek,.mobile-player-controls{animation:none!important;transition:none!important}

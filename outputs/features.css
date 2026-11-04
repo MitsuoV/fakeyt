@@ -15,5 +15,5 @@
 .new-playlist-inline{display:flex;gap:8px;margin-top:14px}
 .new-playlist-inline .settings-input{flex:1}
 .new-playlist-inline .primary-button{height:38px}
-@media(max-width:740px){.recommendations-panel{margin-top:38px}.recommendation-list{grid-template-columns:1fr}.new-playlist-inline{flex-direction:column}.new-playlist-inline .primary-button{width:100%}}
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){.recommendations-panel{margin-top:38px}.recommendation-list{grid-template-columns:1fr}.new-playlist-inline{flex-direction:column}.new-playlist-inline .primary-button{width:100%}}
 

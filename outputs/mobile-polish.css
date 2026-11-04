@@ -4,7 +4,7 @@
 .recommendation-card:hover{border-color:#555d52;background:#1d201d;transform:translateY(-2px)}
 .playlist-picker-panel{max-height:min(680px,calc(100vh - 34px));overflow:auto}
 
-@media (max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   body{background:radial-gradient(circle at 90% 3%,#22261d 0,#101110 35%),var(--bg)}
   .grain{opacity:.035}
   .sidebar{position:sticky;top:0;width:100%;height:auto;padding:14px 16px 11px;background:#131513f5;border-bottom:1px solid #383c36;box-shadow:0 10px 26px #0005;backdrop-filter:blur(16px)}

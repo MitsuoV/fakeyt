@@ -1,4 +1,4 @@
-@media (max-width: 740px) {
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px) {
   html, body { overflow-x: hidden; }
   body { font-size: 12px; }
   .sidebar { padding: 15px 16px 12px; }

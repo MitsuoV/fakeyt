@@ -1,5 +1,5 @@
 /* High-contrast mobile catalog treatment based on the supplied reference. */
-@media (max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   :root{
     --ink:#191b19;
     --muted:#656b63;

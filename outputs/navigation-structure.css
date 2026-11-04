@@ -14,7 +14,7 @@
 .library-empty{display:grid;place-items:center;gap:8px;padding:35px 20px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);text-align:center}.library-empty>span{color:var(--yellow);font-size:26px}.library-empty strong{font:600 17px var(--display);color:var(--ink)}.library-empty p{margin:0 0 7px;color:var(--faint);font-size:10px}
 .library-new-playlist{white-space:nowrap}
 
-@media(max-width:740px){
+@media (max-width: 1100px), (pointer: coarse) and (max-width: 1400px){
   .result-card{cursor:pointer}
   .result-card:hover{background:#fff;transform:none}
   .result-menu-trigger{width:29px;height:29px;color:#767e74;font-size:11px}
