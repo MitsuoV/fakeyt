@@ -186,7 +186,20 @@ function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (cha
 function formatSeconds(seconds) { if (!Number.isFinite(seconds)) return '0:00'; return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
 function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('visible'); window.clearTimeout(showToast.timeout); showToast.timeout = window.setTimeout(() => toast.classList.remove('visible'), 2600); }
 function shuffleTracks(tracks) { const result = tracks.slice(); for (let index = result.length - 1; index > 0; index -= 1) { const swap = Math.floor(Math.random() * (index + 1)); [result[index], result[swap]] = [result[swap], result[index]]; } return result; }
-function bestThumbnail(thumbnails) { return thumbnails?.maxres?.url || thumbnails?.standard?.url || thumbnails?.high?.url || thumbnails?.medium?.url || thumbnails?.default?.url || ''; }
+function bestThumbnail(thumbnails) { return thumbnails?.uhd?.url || thumbnails?.qhd?.url || thumbnails?.fhd?.url || thumbnails?.maxres?.url || thumbnails?.standard?.url || thumbnails?.high?.url || thumbnails?.medium?.url || thumbnails?.default?.url || ''; }
+async function resolveHighestThumbnail(track) {
+  if (!track?.videoId) return;
+  const videoId = track.videoId;
+  try {
+    const data = await apiGet(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(videoId)}`);
+    const thumbnail = bestThumbnail(data.items?.[0]?.snippet?.thumbnails);
+    if (!thumbnail || currentTrack?.videoId !== videoId) return;
+    currentTrack.thumbnail = thumbnail;
+    if (state.lastPlayedTrack?.videoId === videoId) state.lastPlayedTrack.thumbnail = thumbnail;
+    updateCurrentUI();
+    saveState();
+  } catch { /* Keep the best thumbnail already returned with the video. */ }
+}
 function renderRecentSearches() { $('#recentSearches').innerHTML = state.recentSearches.map((query) => `<option value="${escapeHtml(query)}"></option>`).join(''); }
 function recordSearch(query) { const clean = query.trim(); if (!clean) return; state.recentSearches = [clean, ...state.recentSearches.filter((item) => item.toLowerCase() !== clean.toLowerCase())].slice(0, 8); saveState(); renderRecentSearches(); }
 function hasApiKey() { return true; }
@@ -487,6 +500,7 @@ function updateCurrentUI() {
 function setCurrent(track, announce = true) {
   if (!track) return;
   const previousKey = trackKey(state.lastPlayedTrack); currentTrack = track; state.lastPlayedTrack = track; if (trackKey(track) !== previousKey) state.lastPosition = 0; updateCurrentUI();
+  resolveHighestThumbnail(track);
   if (!state.history.some((entry) => trackKey(entry.track) === trackKey(track))) state.history.unshift({ track, playedAt: new Date().toISOString() });
   state.history = state.history.slice(0, 50); saveState(); renderLibrary();
   if (announce) showToast(`Playing “${track.title}”`);
@@ -656,7 +670,7 @@ function previousTrack() { if (playerReady && player.getCurrentTime() > 5) retur
 
 async function apiGet(endpoint, authenticated = false) {
   const upstream = new URL(endpoint);
-  const action = upstream.pathname.endsWith('/search') ? 'search' : upstream.searchParams.get('chart') ? 'trending' : upstream.pathname.endsWith('/playlistItems') ? 'playlist' : upstream.pathname.endsWith('/playlists') ? 'playlists' : upstream.pathname.endsWith('/channels') ? 'channel' : 'search';
+  const action = upstream.pathname.endsWith('/search') ? 'search' : upstream.searchParams.get('chart') ? 'trending' : upstream.pathname.endsWith('/playlistItems') ? 'playlist' : upstream.pathname.endsWith('/playlists') ? 'playlists' : upstream.pathname.endsWith('/channels') ? 'channel' : upstream.pathname.endsWith('/videos') ? 'video' : 'search';
   const params = new URLSearchParams(upstream.search);
   params.set('action', action);
   const headers = authenticated ? { Authorization: `Bearer ${state.accessToken}` } : {};
