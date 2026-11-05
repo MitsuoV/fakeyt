@@ -650,9 +650,115 @@ function seekToPosition() {
   if (duration) player.seekTo((Number(seek.value) / 100) * duration, true);
 }
 
+let playerInitializationPromise = null;
+let youtubeApiPromise = null;
+
+function loadYouTubeIframeAPI() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (youtubeApiPromise) return youtubeApiPromise;
+
+  youtubeApiPromise = new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error('YouTube player API timed out. Check the car display internet connection or content restrictions.')), 15000);
+    const previousReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      try { previousReady?.(); } catch (error) { console.warn('Previous YouTube API callback failed:', error); }
+      window.clearTimeout(timeout);
+      if (window.YT?.Player) resolve(window.YT);
+      else reject(new Error('YouTube loaded without exposing its player API.'));
+    };
+
+    let script = document.getElementById('youtube-iframe-api');
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'youtube-iframe-api';
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.onerror = () => {
+        window.clearTimeout(timeout);
+        youtubeApiPromise = null;
+        reject(new Error('Could not download the official YouTube player API.'));
+      };
+      document.head.appendChild(script);
+    } else {
+      script.addEventListener('error', () => {
+        window.clearTimeout(timeout);
+        youtubeApiPromise = null;
+        reject(new Error('Could not download the official YouTube player API.'));
+      }, { once: true });
+    }
+  });
+  return youtubeApiPromise;
+}
+
+function youtubePlayerErrorMessage(code) {
+  const messages = {
+    2: 'YouTube rejected this video ID.',
+    5: 'This video cannot play in the current browser or car display.',
+    100: 'This video is unavailable, private, or has been removed.',
+    101: 'The video owner does not allow playback in embedded players.',
+    150: 'The video owner does not allow playback in embedded players.',
+    153: 'YouTube did not receive the required referrer or app identification.'
+  };
+  return messages[code] || `The official YouTube player returned error ${code}.`;
+}
+
 function ensurePlayer() {
-  if (playerReady) return Promise.resolve();
-      return new Promise((resolve, reject) => { const createPlayer = () => { player = new window.YT.Player('youtubePlayer', { height: '1', width: '1', videoId: '', playerVars: { controls: 0, playsinline: 1, rel: 0 }, events: { onReady: () => { playerReady = true; resolve(); }, onStateChange: (event) => { if (event.data === window.YT.PlayerState.PLAYING) { isPlaying = true; $('#playPause').textContent = '❚❚'; mirrorMobilePlayerState(); startProgressTimer(); } if (event.data === window.YT.PlayerState.PAUSED) { isPlaying = false; $('#playPause').textContent = '▶'; mirrorMobilePlayerState(); } if (event.data === window.YT.PlayerState.ENDED) { if (repeatMode === 'one' && currentTrack) playTrack(currentTrack, true); else nextTrack(); } } } }); }; if (window.YT?.Player) createPlayer(); else { const oldReady = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { oldReady?.(); createPlayer(); }; loadScript('https://www.youtube.com/iframe_api', 'youtube-iframe-api').catch(reject); } });
+  if (playerReady && player) return Promise.resolve(player);
+  if (playerInitializationPromise) return playerInitializationPromise;
+
+  playerInitializationPromise = loadYouTubeIframeAPI().then((YT) => new Promise((resolve, reject) => {
+    try {
+      player = new YT.Player('youtubePlayer', {
+        height: '270',
+        width: '480',
+        videoId: '',
+        playerVars: {
+          controls: 1,
+          playsinline: 1,
+          rel: 0,
+          enablejsapi: 1,
+          origin: window.location.origin
+        },
+        events: {
+          onReady: () => {
+            playerReady = true;
+            resolve(player);
+          },
+          onError: (event) => {
+            const error = new Error(youtubePlayerErrorMessage(event.data));
+            showToast(error.message);
+            if (!playerReady) reject(error);
+          },
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.PLAYING) {
+              isPlaying = true;
+              $('#playPause').textContent = '❚❚';
+              mirrorMobilePlayerState();
+              startProgressTimer();
+            }
+            if (event.data === YT.PlayerState.PAUSED) {
+              isPlaying = false;
+              $('#playPause').textContent = '▶';
+              mirrorMobilePlayerState();
+            }
+            if (event.data === YT.PlayerState.ENDED) {
+              if (repeatMode === 'one' && currentTrack) playTrack(currentTrack, true);
+              else nextTrack();
+            }
+          }
+        }
+      });
+    } catch (error) {
+      reject(error);
+    }
+  })).catch((error) => {
+    playerInitializationPromise = null;
+    playerReady = false;
+    player = null;
+    throw error;
+  });
+
+  return playerInitializationPromise;
 }
 
 async function playTrack(track, preservePlaylistPlayback = false) {
@@ -671,7 +777,7 @@ async function playTrack(track, preservePlaylistPlayback = false) {
   if (!preservePlaylistPlayback) activePlaybackTracks = [];
   setCurrent(track, false);
   loadRecommendations(track);
-  try { await ensurePlayer(); player.loadVideoById(track.videoId); if (resumeAt > 5) window.setTimeout(() => player.seekTo(resumeAt, true), 350); player.playVideo(); showToast(resumeAt > 5 ? `Resuming “${track.title}”` : `Playing “${track.title}”`); } catch { showToast('The official YouTube player could not load.'); }
+  try { await ensurePlayer(); player.loadVideoById(track.videoId); if (resumeAt > 5) window.setTimeout(() => player.seekTo(resumeAt, true), 350); player.playVideo(); showToast(resumeAt > 5 ? `Resuming “${track.title}”` : `Playing “${track.title}”`); } catch (error) { showToast(error.message || 'The official YouTube player could not load.'); }
 }
 
 function nextTrack() {
