@@ -65,3 +65,19 @@
   }
 }
 
+@media (min-width: 741px) and (max-width: 1400px) {
+  .mobile-player-art {
+    width: min(82vw, 680px, 78vh);
+    margin-top: clamp(18px, 5vh, 48px);
+    margin-bottom: 20px;
+  }
+
+  .mobile-player-copy {
+    margin-bottom: 18px;
+  }
+
+  .mobile-player-controls {
+    margin-top: 20px;
+  }
+}
+
