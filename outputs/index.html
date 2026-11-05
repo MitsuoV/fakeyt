@@ -95,8 +95,10 @@
 
     <section class="mobile-player" id="mobilePlayer" hidden aria-label="Expanded music player">
       <div class="mobile-player-topline"><span class="eyebrow">NOW PLAYING</span><button class="mobile-player-close" id="mobilePlayerClose" aria-label="Collapse player">⌄</button></div>
-      <div class="mobile-player-art" id="mobilePlayerArt"><span>♪</span></div>
-      <div class="mobile-player-copy"><strong id="mobileNowTitle">Nothing selected</strong><span id="mobileNowArtist">Search YouTube to begin</span></div>
+      <div class="mobile-player-track-content" id="mobilePlayerTrackContent">
+        <div class="mobile-player-art" id="mobilePlayerArt"><span>♪</span></div>
+        <div class="mobile-player-copy"><strong id="mobileNowTitle">Nothing selected</strong><span id="mobileNowArtist">Search YouTube to begin</span></div>
+      </div>
       <div class="mobile-player-seek">
         <input id="mobileProgressSeek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Seek through the current song" disabled />
         <div><span id="mobileCurrentTime">0:00</span><span id="mobileDuration">0:00</span></div>
