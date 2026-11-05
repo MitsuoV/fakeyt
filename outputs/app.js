@@ -186,6 +186,7 @@ function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (cha
 function formatSeconds(seconds) { if (!Number.isFinite(seconds)) return '0:00'; return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`; }
 function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('visible'); window.clearTimeout(showToast.timeout); showToast.timeout = window.setTimeout(() => toast.classList.remove('visible'), 2600); }
 function shuffleTracks(tracks) { const result = tracks.slice(); for (let index = result.length - 1; index > 0; index -= 1) { const swap = Math.floor(Math.random() * (index + 1)); [result[index], result[swap]] = [result[swap], result[index]]; } return result; }
+function bestThumbnail(thumbnails) { return thumbnails?.maxres?.url || thumbnails?.standard?.url || thumbnails?.high?.url || thumbnails?.medium?.url || thumbnails?.default?.url || ''; }
 function renderRecentSearches() { $('#recentSearches').innerHTML = state.recentSearches.map((query) => `<option value="${escapeHtml(query)}"></option>`).join(''); }
 function recordSearch(query) { const clean = query.trim(); if (!clean) return; state.recentSearches = [clean, ...state.recentSearches.filter((item) => item.toLowerCase() !== clean.toLowerCase())].slice(0, 8); saveState(); renderRecentSearches(); }
 function hasApiKey() { return true; }
@@ -338,7 +339,7 @@ async function importPlaylistFromUrl(event) {
       title = `${channel.snippet?.title || 'Artist'} — all songs`;
       importedFrom = `channel:${channel.id}`;
       const topSongs = await apiGet(`https://www.googleapis.com/youtube/v3/search?channelId=${encodeURIComponent(channel.id)}&order=viewCount&type=video&videoCategoryId=10&maxResults=25`);
-      const tracks = (topSongs.items || []).filter((item) => item.id?.videoId).map((item) => ({ kind: 'video', videoId: item.id.videoId, title: item.snippet?.title, artist: item.snippet?.channelTitle || channel.snippet?.title || 'YouTube', thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url, tone: 'coral' }));
+      const tracks = (topSongs.items || []).filter((item) => item.id?.videoId).map((item) => ({ kind: 'video', videoId: item.id.videoId, title: item.snippet?.title, artist: item.snippet?.channelTitle || channel.snippet?.title || 'YouTube', thumbnail: bestThumbnail(item.snippet?.thumbnails), tone: 'coral' }));
       title = `${channel.snippet?.title || 'Artist'} — top songs`;
       if (!tracks.length) throw new Error('No music videos were found for that artist channel.');
       state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom, tracks });
@@ -361,7 +362,7 @@ async function importPlaylistFromUrl(event) {
       pageToken = page.nextPageToken || '';
       pages += 1;
     }
-    const tracks = items.filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url, tone: 'coral' }));
+    const tracks = items.filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: bestThumbnail(item.snippet.thumbnails), tone: 'coral' }));
     if (!channelTarget) title = playlistInfo.snippet.title || title;
     state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom, tracks });
     saveState(); renderPlaylists(); renderLibrary(); input.value = ''; setImportStatus(`${tracks.length} ${tracks.length === 1 ? 'song' : 'songs'} imported from “${title}”.`); showToast(`Imported “${title}”.`);
@@ -672,9 +673,9 @@ async function apiGet(endpoint, authenticated = false) {
 }
 
 function mapSearchResult(item) {
-  if (item.id?.videoId) return { kind: 'video', videoId: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url, tone: 'blue' };
-  if (item.id?.playlistId) return { kind: 'playlist', playlistId: item.id.playlistId, title: item.snippet.title, artist: item.snippet.channelTitle, thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url, tone: 'coral' };
-  return { kind: 'channel', channelId: item.id?.channelId, title: item.snippet.title, artist: 'Channel', description: item.snippet.description, thumbnail: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url, tone: 'yellow' };
+  if (item.id?.videoId) return { kind: 'video', videoId: item.id.videoId, title: item.snippet.title, artist: item.snippet.channelTitle, thumbnail: bestThumbnail(item.snippet.thumbnails), tone: 'blue' };
+  if (item.id?.playlistId) return { kind: 'playlist', playlistId: item.id.playlistId, title: item.snippet.title, artist: item.snippet.channelTitle, thumbnail: bestThumbnail(item.snippet.thumbnails), tone: 'coral' };
+  return { kind: 'channel', channelId: item.id?.channelId, title: item.snippet.title, artist: 'Channel', description: item.snippet.description, thumbnail: bestThumbnail(item.snippet.thumbnails), tone: 'yellow' };
 }
 
 async function searchYouTube(reset = true) {
@@ -697,13 +698,13 @@ async function loadTrending() {
   if (!hasApiKey()) return renderSetupState();
   const requestId = ++requestSerial;
   resultsList.innerHTML = '<div class="browse-empty"><span class="loading-mark">◌</span><h3>Loading music…</h3><p>Fetching what is moving right now.</p></div>';
-  try { const data = await apiGet('https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=12&videoCategoryId=10&regionCode=SG'); if (requestId !== requestSerial || currentView !== 'home') return; const results = (data.items || []).map((item) => ({ kind: 'video', videoId: item.id, title: item.snippet?.title, artist: item.snippet?.channelTitle, thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url, tone: 'blue' })); nextPageToken = ''; $('#resultsEyebrow').textContent = 'Discovery · Singapore'; $('#resultsHeading').textContent = 'Trending now'; $('#resultsMeta').textContent = `${results.length} loaded`; renderResults(results); loadRecommendations(results[0]); } catch (error) { if (requestId !== requestSerial || currentView !== 'home') return; const quotaMessage = error?.status === 429 || error?.reason === 'rateLimitExceeded' || /quota/i.test(error?.message || ''); renderSetupState(quotaMessage ? 'YouTube’s daily API quota is exhausted. It will reset automatically, or you can request a higher quota in Google Cloud.' : 'Music discovery could not load right now. Check the YouTube API configuration.', !quotaMessage); }
+  try { const data = await apiGet('https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=12&videoCategoryId=10&regionCode=SG'); if (requestId !== requestSerial || currentView !== 'home') return; const results = (data.items || []).map((item) => ({ kind: 'video', videoId: item.id, title: item.snippet?.title, artist: item.snippet?.channelTitle, thumbnail: bestThumbnail(item.snippet?.thumbnails), tone: 'blue' })); nextPageToken = ''; $('#resultsEyebrow').textContent = 'Discovery · Singapore'; $('#resultsHeading').textContent = 'Trending now'; $('#resultsMeta').textContent = `${results.length} loaded`; renderResults(results); loadRecommendations(results[0]); } catch (error) { if (requestId !== requestSerial || currentView !== 'home') return; const quotaMessage = error?.status === 429 || error?.reason === 'rateLimitExceeded' || /quota/i.test(error?.message || ''); renderSetupState(quotaMessage ? 'YouTube’s daily API quota is exhausted. It will reset automatically, or you can request a higher quota in Google Cloud.' : 'Music discovery could not load right now. Check the YouTube API configuration.', !quotaMessage); }
 }
 
 async function openPlaylist(playlistId, title) {
   if (!hasApiKey()) return renderSetupState();
   resultsList.innerHTML = `<div class="browse-empty"><span class="loading-mark">◌</span><h3>Opening ${escapeHtml(title)}…</h3></div>`;
-  try { const data = await apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50`); const results = (data.items || []).filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: item.snippet.thumbnails?.medium?.url, tone: 'coral' })); $('#resultsHeading').textContent = title; $('#resultsEyebrow').textContent = 'Playlist'; $('#resultsMeta').textContent = `${results.length} tracks`; nextPageToken = ''; renderResults(results); } catch { showToast('Could not open that playlist.'); }
+  try { const data = await apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50`); const results = (data.items || []).filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: bestThumbnail(item.snippet.thumbnails), tone: 'coral' })); $('#resultsHeading').textContent = title; $('#resultsEyebrow').textContent = 'Playlist'; $('#resultsMeta').textContent = `${results.length} tracks`; nextPageToken = ''; renderResults(results); } catch { showToast('Could not open that playlist.'); }
 }
 
 function toggleFavorite() { if (!currentTrack) return showToast('Play a result before saving it.'); const key = trackKey(currentTrack); state.favorites = state.favorites.includes(key) ? state.favorites.filter((item) => item !== key) : [...state.favorites, key]; saveState(); updateCurrentUI(); renderLibrary(); showToast(state.favorites.includes(key) ? 'Saved to favorites.' : 'Removed from favorites.'); }
