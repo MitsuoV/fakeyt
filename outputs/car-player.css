@@ -1,0 +1,34 @@
+/* The YouTube IFrame Player must remain a visible, usable embed.
+   YouTube requires an embedded viewport of at least 200x200px. */
+.youtube-anchor {
+  position: fixed;
+  z-index: 30;
+  right: 12px;
+  bottom: 92px;
+  width: min(480px, calc(100vw - 24px));
+  height: 270px;
+  min-width: 200px;
+  min-height: 200px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  opacity: 1;
+  pointer-events: auto;
+  background: #000;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.38);
+}
+.youtube-anchor iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+@media (max-width: 520px) {
+  .youtube-anchor {
+    right: 8px;
+    bottom: 84px;
+    width: min(480px, calc(100vw - 16px));
+    height: max(200px, min(270px, calc((100vw - 16px) * 9 / 16)));
+  }
+}
