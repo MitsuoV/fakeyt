@@ -38,6 +38,10 @@ module.exports = async function handler(request, response) {
     params.set('videoCategoryId', '10');
     addIfPresent(params, 'regionCode', query.regionCode || 'SG');
     addIfPresent(params, 'maxResults', query.maxResults || '12');
+  } else if (action === 'video') {
+    if (!query.id) return response.status(400).json({ error: 'A YouTube video ID is required.' });
+    resource = 'videos';
+    addIfPresent(params, 'id', query.id);
   } else if (action === 'playlist') {
     resource = 'playlistItems';
     params.set('part', 'snippet,contentDetails');
@@ -72,4 +76,5 @@ module.exports = async function handler(request, response) {
     return response.status(502).json({ error: 'Could not reach YouTube.', detail: error.message });
   }
 };
+
 
