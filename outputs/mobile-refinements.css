@@ -18,20 +18,14 @@
 
   .primary-nav .nav-item.active {
     border: 0;
-    background: transparent;
+    border-radius: 12px;
+    background: var(--paper);
     box-shadow: none;
-    color: var(--coral);
+    color: var(--ink);
   }
 
   .primary-nav .nav-item.active .nav-icon {
-    display: grid;
-    flex: 0 0 30px;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: var(--flame);
-    color: var(--charcoal);
+    color: var(--coral);
   }
 
   .primary-nav .nav-item.active::after {
@@ -39,6 +33,9 @@
   }
 
   .mobile-player-art {
+    width: min(88vw, 420px);
+    aspect-ratio: 16 / 9;
+    margin: clamp(22px, 8vh, 64px) auto 28px;
     overflow: visible;
     background: transparent;
     box-shadow: none;
@@ -51,8 +48,8 @@
   .mobile-player-art img {
     width: 100%;
     height: 100%;
-    border-radius: 22px;
-    object-fit: cover;
+    border-radius: 3px;
+    object-fit: contain;
     filter: drop-shadow(0 24px 32px rgba(0, 0, 0, .42));
   }
 
@@ -61,7 +58,7 @@
     place-items: center;
     width: 100%;
     height: 100%;
-    border-radius: 22px;
+    border-radius: 3px;
     color: var(--flame);
     background: transparent;
     filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .35));
