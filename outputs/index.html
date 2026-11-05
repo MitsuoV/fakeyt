@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#101110" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>Lowkey — YouTube music desk</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,6 +29,7 @@
     <link rel="stylesheet" href="responsive-tablet.css?v=1" />
     <link rel="stylesheet" href="sync.css?v=1" />
     <link rel="stylesheet" href="mobile-refinements.css?v=4" />
+    <link rel="stylesheet" href="car-player.css?v=1" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -114,7 +116,7 @@
       <div class="mobile-player-footer"><span>MITSUO'S CORNER</span><span class="mobile-player-spark">✦</span></div>
     </section>
 
-    <div class="youtube-anchor" id="youtubePlayer" aria-hidden="true"></div>
+    <div class="youtube-anchor" id="youtubePlayer" role="region" aria-label="Official YouTube video player"></div>
     <div id="queueList" hidden></div>
     <div class="settings-modal" id="settingsModal" hidden>
       <div class="settings-backdrop" data-close-settings></div>
