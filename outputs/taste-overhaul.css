@@ -265,10 +265,10 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
   .now-playing{cursor:pointer}
   .mobile-player[hidden]{display:none!important}
   .mobile-player:not([hidden]){display:flex;position:fixed;z-index:80;inset:0;min-height:100dvh;overflow:hidden;flex-direction:column;padding:calc(18px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));color:#fff8e8;background:#1a1918;isolation:isolate;touch-action:pan-y;transform:translateY(100%);opacity:0;transition:transform .42s var(--ease),opacity .28s ease}
-  .mobile-player:not([hidden])::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(180deg,rgba(26,25,24,.52),rgba(26,25,24,.7) 58%,rgba(26,25,24,.84));pointer-events:none}
+  .mobile-player:not([hidden])::before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(180deg,rgba(26,25,24,.12),rgba(26,25,24,.24) 58%,rgba(26,25,24,.4));pointer-events:none}
   .mobile-player:not([hidden])::after{display:none}
   .mobile-player.is-open{transform:translateY(0);opacity:1}
-  .mobile-player-backdrop{position:absolute;z-index:-2;inset:-5%;background-color:#1a1918;background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(28px) brightness(.52) saturate(.82);transform:scale(1.1);will-change:transform,opacity}
+  .mobile-player-backdrop{position:absolute;z-index:-2;inset:-9%;background-color:#1a1918;background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(40px) brightness(.78) saturate(1.2);transform:scale(1.12);will-change:transform,opacity}
   .mobile-player-backdrop.mobile-track-swipe-left{animation:mobile-backdrop-swipe-left .36s ease-in-out both}
   .mobile-player-backdrop.mobile-track-swipe-right{animation:mobile-backdrop-swipe-right .36s ease-in-out both}
   .mobile-player-track-content{display:flex;flex-direction:column;will-change:transform,opacity}
@@ -306,8 +306,8 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
   @keyframes mobile-copy-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes mobile-track-swipe-left{0%{opacity:1;transform:translateX(0)}38%{opacity:0;transform:translateX(-20px)}40%{opacity:0;transform:translateX(20px)}100%{opacity:1;transform:translateX(0)}}
   @keyframes mobile-track-swipe-right{0%{opacity:1;transform:translateX(0)}38%{opacity:0;transform:translateX(20px)}40%{opacity:0;transform:translateX(-20px)}100%{opacity:1;transform:translateX(0)}}
-  @keyframes mobile-backdrop-swipe-left{0%{opacity:1;transform:translateX(0) scale(1.1)}38%{opacity:0;transform:translateX(-20px) scale(1.1)}40%{opacity:0;transform:translateX(20px) scale(1.1)}100%{opacity:1;transform:translateX(0) scale(1.1)}}
-  @keyframes mobile-backdrop-swipe-right{0%{opacity:1;transform:translateX(0) scale(1.1)}38%{opacity:0;transform:translateX(20px) scale(1.1)}40%{opacity:0;transform:translateX(-20px) scale(1.1)}100%{opacity:1;transform:translateX(0) scale(1.1)}}
+  @keyframes mobile-backdrop-swipe-left{0%{opacity:1;transform:translateX(0) scale(1.12)}38%{opacity:0;transform:translateX(-20px) scale(1.12)}40%{opacity:0;transform:translateX(20px) scale(1.12)}100%{opacity:1;transform:translateX(0) scale(1.12)}}
+  @keyframes mobile-backdrop-swipe-right{0%{opacity:1;transform:translateX(0) scale(1.12)}38%{opacity:0;transform:translateX(20px) scale(1.12)}40%{opacity:0;transform:translateX(-20px) scale(1.12)}100%{opacity:1;transform:translateX(0) scale(1.12)}}
 }
 
 @media (min-width: 1101px) and (pointer: fine){.mobile-player{display:none!important}}
