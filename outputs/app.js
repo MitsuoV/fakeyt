@@ -496,7 +496,38 @@ function loadScript(src, id) {
 }
 
 function startProgressTimer() {
-  window.clearInterval(progressTimer); progressTimer = window.setInterval(() => { if (!playerReady || !player) return; const current = player.getCurrentTime(); const duration = player.getDuration(); const fill = $('.player-progress .progress-fill'); const seek = $('#progressSeek'); const mobileSeek = $('#mobileProgressSeek'); const percent = duration ? (current / duration) * 100 : 0; state.lastPlayedTrack = currentTrack; state.lastPosition = current; if (Math.floor(current) % 5 === 0) saveState(); if (fill && duration) fill.style.width = `${percent}%`; if (seek && !seek.matches(':active')) { seek.value = String(percent); seek.disabled = !duration; } if (mobileSeek && !mobileSeek.matches(':active')) { mobileSeek.value = String(percent); mobileSeek.disabled = !duration; } const labels = document.querySelectorAll('.player-progress span'); if (labels.length === 2) { labels[0].textContent = formatSeconds(current); labels[1].textContent = formatSeconds(duration); } const mobileCurrent = $('#mobileCurrentTime'); const mobileDuration = $('#mobileDuration'); if (mobileCurrent) mobileCurrent.textContent = formatSeconds(current); if (mobileDuration) mobileDuration.textContent = formatSeconds(duration); }, 250);
+  window.clearInterval(progressTimer);
+  progressTimer = window.setInterval(() => {
+    if (!playerReady || !player) return;
+    const current = player.getCurrentTime();
+    const duration = player.getDuration();
+    const percent = duration ? (current / duration) * 100 : 0;
+    const fill = $('.player-progress .progress-fill');
+    const seek = $('#progressSeek');
+    const mobileSeek = $('#mobileProgressSeek');
+    state.lastPlayedTrack = currentTrack;
+    state.lastPosition = current;
+    if (Math.floor(current) % 5 === 0) saveState();
+    if (fill && duration) fill.style.width = `${percent}%`;
+    if (seek && !seek.matches(':active')) {
+      seek.value = String(percent);
+      seek.disabled = !duration;
+    }
+    if (mobileSeek && !mobileSeek.matches(':active')) {
+      mobileSeek.value = String(percent);
+      mobileSeek.style.setProperty('--mobile-seek-progress', `${percent}%`);
+      mobileSeek.disabled = !duration;
+    }
+    const labels = document.querySelectorAll('.player-progress span');
+    if (labels.length === 2) {
+      labels[0].textContent = formatSeconds(current);
+      labels[1].textContent = formatSeconds(duration);
+    }
+    const mobileCurrent = $('#mobileCurrentTime');
+    const mobileDuration = $('#mobileDuration');
+    if (mobileCurrent) mobileCurrent.textContent = formatSeconds(current);
+    if (mobileDuration) mobileDuration.textContent = formatSeconds(duration);
+  }, 250);
 }
 
 function previewSeek() {
