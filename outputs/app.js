@@ -490,9 +490,11 @@ function updateCurrentUI() {
   const mobileControls = ['#mobilePlayPause'];
   mobileControls.forEach((selector) => { const element = $(selector); if (element) element.disabled = !currentTrack?.videoId; });
   const mobileTitle = $('#mobileNowTitle'); const mobileArtist = $('#mobileNowArtist'); const mobileArt = $('#mobilePlayerArt');
+  const mobileBackdrop = $('#mobilePlayerBackdrop');
   if (mobileTitle) mobileTitle.textContent = currentTrack?.title || 'Nothing selected';
   if (mobileArtist) mobileArtist.textContent = currentTrack?.artist || 'Search YouTube to begin';
   if (mobileArt) mobileArt.innerHTML = currentTrack ? thumbnailMarkup(currentTrack) : '<span>♪</span>';
+  if (mobileBackdrop) mobileBackdrop.style.backgroundImage = currentTrack?.thumbnail ? `url(${JSON.stringify(currentTrack.thumbnail)})` : '';
   const liked = currentTrack && state.favorites.includes(trackKey(currentTrack));
   $('#favoriteCurrent').textContent = liked ? '♥' : '♡';
   $('#favoriteCurrent').classList.toggle('liked', Boolean(liked));
@@ -607,16 +609,20 @@ function swipeMobilePlaylist(direction) {
   }
   if (!nextTrack) return showToast(direction > 0 ? 'You are at the end of this playlist.' : 'You are at the start of this playlist.');
   const content = $('#mobilePlayerTrackContent');
+  const backdrop = $('#mobilePlayerBackdrop');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reducedMotion || !content) { playTrack(nextTrack, true); return; }
   mobileSwipeAnimating = true;
   const side = direction > 0 ? 'left' : 'right';
   content.classList.remove('mobile-track-swipe-left', 'mobile-track-swipe-right');
+  backdrop?.classList.remove('mobile-track-swipe-left', 'mobile-track-swipe-right');
   void content.offsetWidth;
   content.classList.add(`mobile-track-swipe-${side}`);
+  backdrop?.classList.add(`mobile-track-swipe-${side}`);
   window.setTimeout(() => { playTrack(nextTrack, true); }, 140);
   window.setTimeout(() => {
     content.classList.remove(`mobile-track-swipe-${side}`);
+    backdrop?.classList.remove(`mobile-track-swipe-${side}`);
     mobileSwipeAnimating = false;
   }, 370);
 }
