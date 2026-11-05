@@ -268,8 +268,9 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
   .mobile-player:not([hidden])::before{content:"";position:absolute;z-index:-2;width:82vw;height:82vw;right:-20vw;top:5vh;border-radius:50%;background:radial-gradient(circle,#d94d32 0%,rgba(217,77,50,.34) 36%,transparent 70%);filter:blur(6px);opacity:.8}
   .mobile-player:not([hidden])::after{content:"";position:absolute;z-index:-1;inset:auto -20% 17%;height:34%;background:radial-gradient(ellipse,rgba(243,201,75,.18),transparent 66%);pointer-events:none}
   .mobile-player.is-open{transform:translateY(0);opacity:1}
-  .mobile-player.mobile-swipe-left .mobile-player-art,.mobile-player.mobile-swipe-left .mobile-player-copy,.mobile-player.mobile-swipe-left .mobile-player-seek,.mobile-player.mobile-swipe-left .mobile-player-controls{animation:mobile-swipe-left .48s var(--ease) both}
-  .mobile-player.mobile-swipe-right .mobile-player-art,.mobile-player.mobile-swipe-right .mobile-player-copy,.mobile-player.mobile-swipe-right .mobile-player-seek,.mobile-player.mobile-swipe-right .mobile-player-controls{animation:mobile-swipe-right .48s var(--ease) both}
+  .mobile-player-track-content{display:flex;flex-direction:column;will-change:transform,opacity}
+  .mobile-player-track-content.mobile-track-swipe-left{animation:mobile-track-swipe-left .36s ease-in-out both}
+  .mobile-player-track-content.mobile-track-swipe-right{animation:mobile-track-swipe-right .36s ease-in-out both}
   .mobile-player-topline{display:flex;align-items:center;justify-content:space-between;min-height:42px}
   .mobile-player-topline .eyebrow{color:#f3c94b;letter-spacing:.18em}
   .mobile-player-close{display:grid;place-items:center;width:44px;height:44px;border:1px solid rgba(255,248,232,.22);border-radius:50%;color:#fff8e8;background:rgba(255,248,232,.08);font-size:25px;line-height:1;cursor:pointer;transition:transform .2s ease,background .2s ease}
@@ -300,8 +301,8 @@ button:active:not(:disabled),a:active{transform:translateY(1px) scale(.985)}
   .mobile-player-spark{display:grid;place-items:end;width:38px;height:38px;color:#f3c94b;font-size:18px}
   @keyframes mobile-art-in{from{opacity:0;transform:translateY(20px) scale(.92) rotate(-2deg)}to{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
   @keyframes mobile-copy-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes mobile-swipe-left{0%{opacity:1;transform:translateX(0)}38%{opacity:0;transform:translateX(-34px) scale(.98)}39%{opacity:0;transform:translateX(34px) scale(.98)}100%{opacity:1;transform:translateX(0) scale(1)}}
-  @keyframes mobile-swipe-right{0%{opacity:1;transform:translateX(0)}38%{opacity:0;transform:translateX(34px) scale(.98)}39%{opacity:0;transform:translateX(-34px) scale(.98)}100%{opacity:1;transform:translateX(0) scale(1)}}
+  @keyframes mobile-track-swipe-left{0%{opacity:1;transform:translateX(0)}38%{opacity:0;transform:translateX(-20px)}40%{opacity:0;transform:translateX(20px)}100%{opacity:1;transform:translateX(0)}}
+  @keyframes mobile-track-swipe-right{0%{opacity:1;transform:translateX(0)}38%{opacity:0;transform:translateX(20px)}40%{opacity:0;transform:translateX(-20px)}100%{opacity:1;transform:translateX(0)}}
 }
 
 @media (min-width: 1101px) and (pointer: fine){.mobile-player{display:none!important}}
