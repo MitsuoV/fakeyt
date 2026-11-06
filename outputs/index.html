@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="responsive-tablet.css?v=1" />
     <link rel="stylesheet" href="sync.css?v=1" />
     <link rel="stylesheet" href="mobile-refinements.css?v=4" />
+    <link rel="stylesheet" href="lyrics.css?v=1" />
     <link rel="stylesheet" href="car-player.css?v=3" />
   </head>
   <body>
@@ -97,9 +98,14 @@
 
     <section class="mobile-player" id="mobilePlayer" hidden aria-label="Expanded music player">
       <div class="mobile-player-backdrop" id="mobilePlayerBackdrop" aria-hidden="true"></div>
-      <div class="mobile-player-topline"><span class="eyebrow">NOW PLAYING</span><button class="mobile-player-close" id="mobilePlayerClose" aria-label="Collapse player">⌄</button></div>
+      <div class="mobile-player-topline"><span class="eyebrow">NOW PLAYING</span><div class="mobile-player-top-actions"><button class="mobile-player-lyrics-toggle" id="mobileLyricsToggle" type="button" aria-pressed="false">Lyrics</button><button class="mobile-player-close" id="mobilePlayerClose" aria-label="Collapse player">⌄</button></div></div>
       <div class="mobile-player-track-content" id="mobilePlayerTrackContent">
-        <div class="mobile-player-art" id="mobilePlayerArt"><span>♪</span></div>
+        <div class="mobile-player-visual" id="mobilePlayerVisual">
+          <div class="mobile-player-art" id="mobilePlayerArt"><span>♪</span></div>
+          <div class="mobile-player-lyrics" id="mobilePlayerLyrics" aria-label="Song lyrics" aria-hidden="true" inert>
+            <div class="mobile-player-lyrics-inner" id="mobilePlayerLyricsInner"></div>
+          </div>
+        </div>
         <div class="mobile-player-copy"><strong id="mobileNowTitle">Nothing selected</strong><span id="mobileNowArtist">Search YouTube to begin</span></div>
       </div>
       <div class="mobile-player-seek">
@@ -152,8 +158,9 @@
       <button class="track-menu-item menu-playlist-action danger-menu-item" id="menuDeletePlaylist">× Delete playlist</button>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=artist-import-5"></script>
+    <script src="app.js?v=lyrics-1"></script>
   </body>
 </html>
+
 
 
