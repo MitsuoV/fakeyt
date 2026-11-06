@@ -709,11 +709,11 @@ function ensurePlayer() {
   playerInitializationPromise = loadYouTubeIframeAPI().then((YT) => new Promise((resolve, reject) => {
     try {
       player = new YT.Player('youtubePlayer', {
-        height: '270',
-        width: '480',
+        height: '1',
+        width: '1',
         videoId: '',
         playerVars: {
-          controls: 1,
+          controls: 0,
           playsinline: 1,
           rel: 0,
           enablejsapi: 1,
