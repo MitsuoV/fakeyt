@@ -777,7 +777,22 @@ async function playTrack(track, preservePlaylistPlayback = false) {
   if (!preservePlaylistPlayback) activePlaybackTracks = [];
   setCurrent(track, false);
   loadRecommendations(track);
-  try { await ensurePlayer(); player.loadVideoById(track.videoId); if (resumeAt > 5) window.setTimeout(() => player.seekTo(resumeAt, true), 350); player.playVideo(); showToast(resumeAt > 5 ? `Resuming “${track.title}”` : `Playing “${track.title}”`); } catch (error) { showToast(error.message || 'The official YouTube player could not load.'); }
+  const startPlayback = () => {
+    if (!playerReady || !player) return false;
+    player.loadVideoById({ videoId: track.videoId, startSeconds: resumeAt > 5 ? resumeAt : 0 });
+    player.playVideo();
+    showToast(resumeAt > 5 ? `Resuming “${track.title}”` : `Playing “${track.title}”`);
+    return true;
+  };
+
+  // Keep playVideo() in the original tap/click gesture whenever possible.
+  // Awaiting the IFrame API first can consume the browser's autoplay permission.
+  if (playerReady && player) {
+    startPlayback();
+  } else {
+    showToast('YouTube player is starting. Tap the track again in a moment.');
+    ensurePlayer().catch((error) => showToast(error.message || 'The official YouTube player could not load.'));
+  }
 }
 
 function nextTrack() {
@@ -890,6 +905,9 @@ function showView(view) {
 }
 
 renderQueue(); renderPlaylists(); renderLibrary(); renderRecentSearches(); setConnectionState(); updateCurrentUI(); setActiveView('home');
+// Warm up the official player before the first track is tapped. This avoids
+// losing the browser's user-activation window while the iframe API downloads.
+ensurePlayer().catch((error) => console.warn('YouTube player prewarm failed:', error));
 loadSharedPlaylists();
 window.setInterval(refreshSharedPlaylists, 15000);
 window.addEventListener('online', refreshSharedPlaylists);
@@ -912,7 +930,16 @@ function trackListSetup() {
 $('#searchInput').addEventListener('input', () => { window.clearTimeout(searchTimer); searchTimer = window.setTimeout(() => searchYouTube(true), 500); });
 $('#searchSubmit').addEventListener('click', () => searchYouTube(true));
 $('#loadMore').addEventListener('click', () => searchYouTube(false));
-$('#playPause').addEventListener('click', async () => { if (!currentTrack) return; try { await ensurePlayer(); if (isPlaying) player.pauseVideo(); else player.playVideo(); } catch { showToast('The official player could not load.'); } });
+$('#playPause').addEventListener('click', () => {
+  if (!currentTrack) return;
+  if (playerReady && player) {
+    if (isPlaying) player.pauseVideo();
+    else player.playVideo();
+    return;
+  }
+  showToast('YouTube player is still starting. Tap play again shortly.');
+  ensurePlayer().catch((error) => showToast(error.message || 'The official player could not load.'));
+});
 $('#progressSeek').addEventListener('input', previewSeek); $('#progressSeek').addEventListener('change', seekToPosition);
 $('.now-playing').addEventListener('click', (event) => { if (!event.target.closest('button')) openMobilePlayer(); });
 $('#mobilePlayerClose').addEventListener('click', closeMobilePlayer);
