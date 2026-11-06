@@ -658,16 +658,24 @@ function loadYouTubeIframeAPI() {
   if (youtubeApiPromise) return youtubeApiPromise;
 
   youtubeApiPromise = new Promise((resolve, reject) => {
-    const timeout = window.setTimeout(() => reject(new Error('YouTube player API timed out. Check the car display internet connection or content restrictions.')), 15000);
+    let script = null;
+    const timeout = window.setTimeout(() => {
+      if (!window.YT?.Player) script?.remove();
+      youtubeApiPromise = null;
+      reject(new Error('YouTube player API timed out. Check the car display internet connection or content restrictions.'));
+    }, 15000);
     const previousReady = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = () => {
       try { previousReady?.(); } catch (error) { console.warn('Previous YouTube API callback failed:', error); }
       window.clearTimeout(timeout);
       if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error('YouTube loaded without exposing its player API.'));
+      else {
+        youtubeApiPromise = null;
+        reject(new Error('YouTube loaded without exposing its player API.'));
+      }
     };
 
-    let script = document.getElementById('youtube-iframe-api');
+    script = document.getElementById('youtube-iframe-api');
     if (!script) {
       script = document.createElement('script');
       script.id = 'youtube-iframe-api';
@@ -675,6 +683,7 @@ function loadYouTubeIframeAPI() {
       script.async = true;
       script.onerror = () => {
         window.clearTimeout(timeout);
+        script.remove();
         youtubeApiPromise = null;
         reject(new Error('Could not download the official YouTube player API.'));
       };
@@ -682,6 +691,7 @@ function loadYouTubeIframeAPI() {
     } else {
       script.addEventListener('error', () => {
         window.clearTimeout(timeout);
+        script.remove();
         youtubeApiPromise = null;
         reject(new Error('Could not download the official YouTube player API.'));
       }, { once: true });
@@ -707,10 +717,14 @@ function ensurePlayer() {
   if (playerInitializationPromise) return playerInitializationPromise;
 
   playerInitializationPromise = loadYouTubeIframeAPI().then((YT) => new Promise((resolve, reject) => {
+    const carDisplay = window.matchMedia('(orientation: landscape) and (min-width: 741px) and (max-height: 900px)').matches;
+    const embed = $('#youtubePlayer');
+    embed?.setAttribute('aria-hidden', String(!carDisplay));
+    const readyTimeout = window.setTimeout(() => reject(new Error('The YouTube player did not become ready. Check the car display connection, then tap play again.')), 15000);
     try {
       player = new YT.Player('youtubePlayer', {
-        height: '1',
-        width: '1',
+        height: carDisplay ? '200' : '1',
+        width: carDisplay ? '200' : '1',
         videoId: '',
         playerVars: {
           controls: 0,
@@ -721,13 +735,17 @@ function ensurePlayer() {
         },
         events: {
           onReady: () => {
+            window.clearTimeout(readyTimeout);
             playerReady = true;
             resolve(player);
           },
           onError: (event) => {
             const error = new Error(youtubePlayerErrorMessage(event.data));
             showToast(error.message);
-            if (!playerReady) reject(error);
+            if (!playerReady) {
+              window.clearTimeout(readyTimeout);
+              reject(error);
+            }
           },
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
