@@ -1,22 +1,17 @@
-/* The YouTube IFrame Player must remain a visible, usable embed.
-   YouTube requires an embedded viewport of at least 200x200px. */
+/* Only car-style landscape screens need a visible YouTube viewport for the IFrame API. */
 .youtube-anchor {
   position: fixed;
-  z-index: 30;
-  right: 12px;
-  bottom: 92px;
-  width: min(480px, calc(100vw - 24px));
-  height: 270px;
-  min-width: 200px;
-  min-height: 200px;
-  aspect-ratio: 16 / 9;
+  left: -2px;
+  bottom: -2px;
+  z-index: 1;
+  width: 1px;
+  height: 1px;
+  min-width: 1px;
+  min-height: 1px;
   overflow: hidden;
-  opacity: 1;
-  pointer-events: auto;
-  background: #000;
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 8px;
-  box-shadow: 0 12px 36px rgba(0,0,0,.38);
+  opacity: 0;
+  pointer-events: none;
+  background: transparent;
 }
 .youtube-anchor iframe {
   display: block;
@@ -24,11 +19,21 @@
   height: 100%;
   border: 0;
 }
-@media (max-width: 520px) {
+@media (orientation: landscape) and (min-width: 741px) and (max-height: 900px) {
   .youtube-anchor {
-    right: 8px;
-    bottom: 84px;
-    width: min(480px, calc(100vw - 16px));
-    height: max(200px, min(270px, calc((100vw - 16px) * 9 / 16)));
+    z-index: 90;
+    right: 12px;
+    bottom: 12px;
+    left: auto;
+    width: 200px;
+    height: 200px;
+    min-width: 200px;
+    min-height: 200px;
+    opacity: 1;
+    pointer-events: auto;
+    background: #000;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 8px;
+    box-shadow: 0 12px 36px rgba(0,0,0,.38);
   }
 }
