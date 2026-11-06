@@ -1,14 +1,15 @@
-/* Keep the compliant YouTube embed outside the document's scroll flow.
-   The viewport remains visible and at least 200x200px as required. */
+/* The YouTube IFrame Player must remain a visible, usable embed.
+   YouTube requires an embedded viewport of at least 200x200px. */
 .youtube-anchor {
   position: fixed;
   z-index: 30;
   right: 12px;
   bottom: 92px;
-  width: 200px;
-  height: 200px;
+  width: min(480px, calc(100vw - 24px));
+  height: 270px;
   min-width: 200px;
   min-height: 200px;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   opacity: 1;
   pointer-events: auto;
@@ -27,7 +28,7 @@
   .youtube-anchor {
     right: 8px;
     bottom: 84px;
-    width: 200px;
-    height: 200px;
+    width: min(480px, calc(100vw - 16px));
+    height: max(200px, min(270px, calc((100vw - 16px) * 9 / 16)));
   }
 }
