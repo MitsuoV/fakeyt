@@ -199,28 +199,54 @@ function showToast(message) { const toast = $('#toast'); toast.textContent = mes
 function lyricIdentity(value) {
   return String(value || '')
     .replace(/[([{](?:\s*official\s*)?(?:music\s*)?(?:video|audio|lyrics?|visualizer|4k|hd|hq)[^\])}]*[\])}]/gi, ' ')
-    .replace(/\s*[-|:]\s*(?:official\s*)?(?:music\s*)?(?:video|audio|lyrics?|visualizer|4k|hd|hq)\s*$/i, ' ')
+    .replace(/\s*(?:[-|:–—]\s*)?(?:official\s*)?(?:music\s*)?(?:video|audio|lyrics?|visualizer|4k|hd|hq|remaster(?:ed)?)\s*$/i, ' ')
+    .replace(/\s+(?:feat(?:uring)?|ft)\.?\s+.*$/i, '')
     .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
 }
 function lyricArtistIdentity(value) {
-  return lyricIdentity(value).replace(/\s+(?:topic|vevo)$/i, '').trim();
+  return lyricIdentity(String(value || '').replace(/(?:\s*[-–—]\s*topic|\s+topic|\s*vevo|\s+official channel)\s*$/i, '')).trim();
+}
+function lyricTitleVariants(value, artist = '') {
+  const raw = String(value || '')
+    .replace(/[([{](?:\s*official\s*)?(?:music\s*)?(?:video|audio|lyrics?|visualizer|4k|hd|hq)[^\])}]*[\])}]/gi, ' ')
+    .replace(/\s*(?:[-|:–—]\s*)?(?:official\s*)?(?:music\s*)?(?:video|audio|lyrics?|visualizer|4k|hd|hq|remaster(?:ed)?)\s*$/i, ' ')
+    .trim();
+  const artistName = lyricArtistIdentity(artist);
+  const candidates = [raw, ...raw.split(/\s+(?:-|–|—|\||:)\s+/)];
+  const variants = new Set();
+  for (const candidate of candidates) {
+    let normalized = lyricIdentity(candidate);
+    if (artistName && normalized.startsWith(`${artistName} `)) normalized = normalized.slice(artistName.length).trim();
+    if (normalized) variants.add(normalized);
+  }
+  return variants;
 }
 function lyricTrackTitle(track) {
-  let title = lyricIdentity(track?.title);
-  const artist = lyricArtistIdentity(track?.artist);
-  if (artist && title.startsWith(`${artist} `)) title = title.slice(artist.length).trim();
-  return title;
+  return lyricTitleVariants(track?.title, track?.artist);
+}
+function lyricsArtistMatches(track, recordArtist) {
+  const candidate = lyricArtistIdentity(recordArtist);
+  if (!candidate) return false;
+  const targets = new Set([lyricArtistIdentity(track?.artist)]);
+  const titlePrefix = String(track?.title || '').split(/\s+[-–—]\s+/)[0];
+  if (titlePrefix && titlePrefix.length > 2) targets.add(lyricArtistIdentity(titlePrefix));
+  for (const target of targets) {
+    if (!target) continue;
+    if (target.replace(/\s/g, '') === candidate.replace(/\s/g, '')) return true;
+    const targetWords = new Set(target.split(' '));
+    const candidateWords = new Set(candidate.split(' '));
+    const smaller = targetWords.size <= candidateWords.size ? targetWords : candidateWords;
+    const larger = smaller === targetWords ? candidateWords : targetWords;
+    if (smaller.size >= 2 && [...smaller].every((word) => larger.has(word))) return true;
+  }
+  return false;
 }
 function lyricsMatchTrack(track, record) {
-  const title = lyricTrackTitle(track);
-  const artist = lyricArtistIdentity(track?.artist);
-  if (!title || !artist) return false;
-  const recordTitle = lyricIdentity(record?.trackName || record?.name);
-  const recordArtist = lyricArtistIdentity(record?.artistName);
-  let normalizedRecordTitle = recordTitle;
-  if (recordArtist && normalizedRecordTitle.startsWith(`${recordArtist} `)) normalizedRecordTitle = normalizedRecordTitle.slice(recordArtist.length).trim();
-  return title === normalizedRecordTitle && artist.replace(/\s/g, '') === recordArtist.replace(/\s/g, '');
+  const titles = lyricTrackTitle(track);
+  if (!titles.size || !lyricsArtistMatches(track, record?.artistName)) return false;
+  const recordTitles = lyricTitleVariants(record?.trackName || record?.name, record?.artistName);
+  return [...titles].some((title) => recordTitles.has(title));
 }
 function parseSyncedLyrics(rawLyrics) {
   const lines = [];
@@ -368,7 +394,9 @@ async function loadMobileLyrics(track = currentTrack, retry = false) {
   lyricsStatus = 'loading';
   currentLyricLineIndex = -1;
   renderLyrics(track);
-  const params = new URLSearchParams({ title: track.title || '', artist: track.artist || '' });
+  const lookupTitle = lyricTrackTitle(track).values().next().value || track.title || '';
+  const lookupArtist = lyricArtistIdentity(track.artist) || track.artist || '';
+  const params = new URLSearchParams({ title: lookupTitle, artist: lookupArtist });
   if (playerReady && player && currentTrack?.videoId === key && player.getDuration() > 0) params.set('duration', String(Math.round(player.getDuration())));
   try {
     const response = await fetch(`/api/lyrics?${params.toString()}`);
@@ -376,7 +404,7 @@ async function loadMobileLyrics(track = currentTrack, retry = false) {
     if (!response.ok) throw Object.assign(new Error(payload.error || 'Lyrics request failed.'), { status: response.status });
     if (requestId !== lyricsRequestSerial || currentTrack?.videoId !== key) return;
     const records = [payload.record, ...(Array.isArray(payload.candidates) ? payload.candidates : [])].filter(Boolean);
-    const record = records.find((candidate) => lyricsMatchTrack(track, candidate));
+    const record = payload.record || records.find((candidate) => lyricsMatchTrack(track, candidate));
     if (!record) {
       currentLyrics = { instrumental: false, syncedLines: [], plainLyrics: '' };
       lyricsStatus = 'loaded';
