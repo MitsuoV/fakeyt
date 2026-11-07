@@ -1008,14 +1008,13 @@ function ensurePlayer() {
   if (playerInitializationPromise) return playerInitializationPromise;
 
   playerInitializationPromise = loadYouTubeIframeAPI().then((YT) => new Promise((resolve, reject) => {
-    const carDisplay = window.matchMedia('(orientation: landscape) and (min-width: 741px) and (max-height: 900px)').matches;
     const embed = $('#youtubePlayer');
-    embed?.setAttribute('aria-hidden', String(!carDisplay));
+    embed?.setAttribute('aria-hidden', 'true');
     const readyTimeout = window.setTimeout(() => reject(new Error('The YouTube player did not become ready. Check the car display connection, then tap play again.')), 15000);
     try {
       player = new YT.Player('youtubePlayer', {
-        height: carDisplay ? '200' : '1',
-        width: carDisplay ? '200' : '1',
+        height: '1',
+        width: '1',
         videoId: '',
         playerVars: {
           controls: 0,
