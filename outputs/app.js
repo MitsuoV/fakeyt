@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 22875)
-Total output lines: 1444
+Warning: truncated output (original token count: 22942)
+Total output lines: 1456
 
 const STORAGE_KEY = 'lowkey-state-v4';
 const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl';
@@ -721,7 +721,7 @@ function saveNetEasePlaylist() {
 async function importNetEasePlaylist(id) {
   setImportStatus('Reading the NetEase playlist…');
   const response = await fetch(`/api/netease-playlist?id=${encodeURIComponent(id)}`);
-  const payload = await response.json().…2875 tokens truncated…ailMarkup(track)}</div><div class="library-track-copy"><strong>${escapeHtml(track.title)}</strong><small>${escapeHtml(track.artist || 'YouTube')}</small></div><button class="library-track-more" data-library-track-menu="${index}" aria-label="More options for ${escapeHtml(track.title)}">•••</button><button class="library-track-remove" data-remove-library-track="${index}" aria-label="Remove ${escapeHtml(track.title)} from ${escapeHtml(activePlaylist.title)}">×</button></article>`).join('') : '<div class="library-track-empty"><strong>This playlist is empty.</strong><p>Use Browse and the ••• menu to add songs here.</p></div>';
+  const payload = await response.json().…2942 tokens truncated…l(track.title)}">•••</button><button class="library-track-remove" data-remove-library-track="${index}" aria-label="Remove ${escapeHtml(track.title)} from ${escapeHtml(activePlaylist.title)}">×</button></article>`).join('') : '<div class="library-track-empty"><strong>This playlist is empty.</strong><p>Use Browse and the ••• menu to add songs here.</p></div>';
   } else {
   $('#libraryPlaylists').innerHTML = localPlaylists.length ? localPlaylists.map((playlist) => `<button class="library-playlist-card" data-library-playlist="${escapeHtml(playlist.id)}" data-playlist-title="${escapeHtml(playlist.title)}"><span class="library-playlist-art"><img src="fuecoco-playlist-cover.png" alt="" /></span><span class="library-playlist-copy"><strong>${escapeHtml(playlist.title)}</strong><small>${(playlist.tracks || []).length} ${(playlist.tracks || []).length === 1 ? 'song' : 'songs'}</small></span><span class="library-playlist-arrow">›</span></button>`).join('') : '<div class="library-empty"><span>＋</span><strong>Your library is empty.</strong><p>Create a playlist and start collecting songs.</p><button class="primary-button" id="createFirstPlaylist">Create playlist</button></div>';
   }
@@ -1157,7 +1157,12 @@ function setActiveView(view) {
   $('.search-shell').hidden = view !== 'browse';
   $('.topbar').classList.toggle('search-view', view === 'browse');
   $('#breadcrumbTitle').textContent = view === 'library' ? 'Library' : view === 'browse' ? 'Search' : 'Home';
-  document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view));
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    const active = item.dataset.view === view;
+    item.classList.toggle('active', active);
+    if (active) item.setAttribute('aria-current', 'page');
+    else item.removeAttribute('aria-current');
+  });
 }
 
 function clearBrowseView() {
@@ -1251,7 +1256,14 @@ $('#menuAddPlaylist').addEventListener('click', () => { const track = menuTrack;
 $('#recommendationList').addEventListener('click', (event) => { const play = event.target.closest('[data-recommendation-index]'); const add = event.target.closest('[data-recommendation-add-index]'); if (play) playTrack(recommendationItems[Number(play.dataset.recommendationIndex)]); if (add) { state.queue.push(recommendationItems[Number(add.dataset.recommendationAddIndex)]); renderQueue(); showToast('Added to queue.'); } }); $('#refreshRecommendations').addEventListener('click', () => loadRecommendations(recommendationSeed || currentTrack || currentResults.find((item) => item.kind === 'video')));
 $('#menuPlayNext').addEventListener('click', () => { if (!menuTrack) return; state.queue.unshift(menuTrack); renderQueue(); showToast('Playing next.'); closeTrackMenu(); });
 $('#exportLibrary').addEventListener('click', exportLibrary); $('#importLibrary').addEventListener('click', () => $('#importLibraryFile').click()); $('#importLibraryFile').addEventListener('change', importLibraryFile); $('#resetLibrary').addEventListener('click', resetLibrary);
-document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => { if (button.dataset.view === 'library') activeLibraryPlaylistId = null; showView(button.dataset.view); }));
+$('.primary-nav').addEventListener('click', (event) => {
+  const button = event.target.closest('.nav-item[data-view]');
+  if (!button) return;
+  event.preventDefault();
+  if (button.dataset.view === 'library') activeLibraryPlaylistId = null;
+  if (!$('#mobilePlayer').hidden) closeMobilePlayer();
+  showView(button.dataset.view);
+});
 document.addEventListener('keydown', (event) => { if (event.target.matches('input, textarea, button')) return; if (event.code === 'Space') { event.preventDefault(); $('#playPause').click(); } if (event.code === 'ArrowRight') nextTrack(); if (event.code === 'ArrowLeft') previousTrack(); });
 
 

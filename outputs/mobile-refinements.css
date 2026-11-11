@@ -65,6 +65,34 @@
   }
 }
 
+/* Keep the primary tabs reachable above the full-screen player on phones,
+   tablets, and short landscape car displays. */
+@media (max-width: 1100px),
+       (pointer: coarse) and (max-width: 1400px),
+       (min-width: 741px) and (max-width: 1600px) and (max-height: 900px) and (orientation: landscape) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 31;
+    isolation: isolate;
+  }
+
+  .primary-nav {
+    position: relative;
+    z-index: 1;
+  }
+
+  .primary-nav .nav-item {
+    min-height: 44px;
+    pointer-events: auto;
+    touch-action: manipulation;
+  }
+
+  body.mobile-player-open .sidebar {
+    z-index: 90 !important;
+  }
+}
+
 @media (min-width: 741px) and (max-width: 1400px) {
   .mobile-player-art {
     width: min(82vw, 680px, 78vh);
@@ -78,6 +106,71 @@
 
   .mobile-player-controls {
     margin-top: 20px;
+  }
+}
+
+/* Car displays can report a fine pointer even though they use the compact
+   landscape layout. Give those viewports the same reachable top navigation. */
+@media (min-width: 1101px) and (max-width: 1600px) and (max-height: 900px) and (orientation: landscape) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(16px, 3vw, 42px);
+    width: 100%;
+    height: auto;
+    padding: 13px clamp(20px, 4vw, 52px);
+    border: 0;
+    border-bottom: 1px solid #3a3731;
+    background: var(--charcoal);
+  }
+
+  .sidebar .brand {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .sidebar .nav-label,
+  .sidebar-rule,
+  .nav-heading,
+  .playlist-nav,
+  .sidebar-empty,
+  .sidebar-bottom {
+    display: none !important;
+  }
+
+  .primary-nav {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .nav-item {
+    flex: 0 1 132px;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 14px;
+    gap: 9px;
+    font-size: 12px;
+  }
+
+  .main-shell {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 clamp(22px, 4vw, 52px) 178px;
+  }
+
+  .player-bar {
+    left: 0;
   }
 }
 
@@ -123,3 +216,4 @@
     margin-top: 14px;
   }
 }
+
