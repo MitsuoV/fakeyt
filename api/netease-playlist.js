@@ -72,4 +72,3 @@ module.exports = async function handler(request, response) {
     return response.status(502).json({ error: message });
   }
 };
-

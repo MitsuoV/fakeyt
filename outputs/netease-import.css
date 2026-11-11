@@ -16,4 +16,3 @@
 .netease-review-footer{border-top:1px solid var(--line);color:var(--muted);font-size:11px}
 .netease-review-footer .primary-button{min-height:42px}
 @media(max-width:680px){.netease-review{margin-bottom:18px}.netease-review-heading,.netease-review-footer{padding:13px}.netease-review-note{padding:11px 13px}.netease-match-list{max-height:48vh;padding:0 13px}.netease-match-row{grid-template-columns:24px minmax(0,1fr);gap:9px;min-height:0;padding:12px 0}.netease-match-source{grid-column:2}.netease-match-select{grid-column:2;min-height:44px}.netease-review-footer{align-items:flex-start;flex-direction:column}.netease-review-footer .primary-button{width:100%}}
-

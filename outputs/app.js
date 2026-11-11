@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 22942)
-Total output lines: 1456
-
 const STORAGE_KEY = 'lowkey-state-v4';
 const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl';
 const $ = (selector) => document.querySelector(selector);
@@ -721,7 +718,196 @@ function saveNetEasePlaylist() {
 async function importNetEasePlaylist(id) {
   setImportStatus('Reading the NetEase playlist…');
   const response = await fetch(`/api/netease-playlist?id=${encodeURIComponent(id)}`);
-  const payload = await response.json().…2942 tokens truncated…l(track.title)}">•••</button><button class="library-track-remove" data-remove-library-track="${index}" aria-label="Remove ${escapeHtml(track.title)} from ${escapeHtml(activePlaylist.title)}">×</button></article>`).join('') : '<div class="library-track-empty"><strong>This playlist is empty.</strong><p>Use Browse and the ••• menu to add songs here.</p></div>';
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'Could not read that NetEase playlist.');
+  const tracks = payload.tracks || [];
+  if (!tracks.length) throw new Error('No songs were found in that NetEase playlist.');
+  pendingNetEaseImport = { id, name: payload.playlist?.name || 'NetEase playlist', cover: payload.playlist?.cover || '', tracks: tracks.map((track) => ({ ...track, candidates: [], selected: null })), searched: 0, matched: 0, unavailableCount: Number(payload.unavailableCount || 0), truncated: !!payload.truncated, searchStopped: false };
+  const batch = pendingNetEaseImport;
+  setImportStatus(`Matching ${tracks.length} songs with YouTube…`);
+  renderNetEaseReview();
+  for (let index = 0; index < tracks.length; index += 1) {
+    if (pendingNetEaseImport !== batch) return;
+    const track = batch.tracks[index];
+    setImportStatus(`Matching song ${index + 1} of ${tracks.length}…`);
+    const query = `${track.name} ${(track.artists || []).join(' ')} official audio`;
+    try {
+      const result = await apiGet(`https://www.googleapis.com/youtube/v3/search?type=video&videoCategoryId=10&maxResults=5&q=${encodeURIComponent(query)}`);
+      track.candidates = (result.items || []).filter((item) => item.id?.videoId).map((item) => ({
+        videoId: item.id.videoId, title: item.snippet?.title || 'Untitled video', artist: item.snippet?.channelTitle || 'YouTube',
+        thumbnail: bestThumbnail(item.snippet?.thumbnails), score: scoreYouTubeMatch(track, item)
+      }));
+      track.candidates.sort((a, b) => b.score - a.score);
+      if (track.candidates[0]?.score >= 88) track.selected = 0;
+    } catch (error) {
+      if (error.status === 403 || /quota|daily limit|rate.?limit/i.test(error.message || '')) {
+        batch.searchStopped = true;
+        batch.searchStopReason = error.message || 'YouTube denied the search request.';
+        break;
+      }
+      track.matchError = true;
+    }
+    batch.searched += 1;
+    if (track.candidates.length) batch.matched += 1;
+    if ((index + 1) % 5 === 0) renderNetEaseReview();
+  }
+  if (pendingNetEaseImport !== batch) return;
+  const pending = batch;
+  const selectedCount = pending.tracks.filter((track) => track.selected !== null).length;
+  renderNetEaseReview();
+  setImportStatus(pending.searchStopped
+    ? `YouTube stopped matching after ${pending.searched} songs (${pending.searchStopReason}). Review and import the matches found.`
+    : `${selectedCount} likely matches selected. Review each version before adding it.`);
+}
+
+async function importPlaylistFromUrl(event) {
+  event.preventDefault();
+  const input = $('#playlistImportUrl');
+  const submit = $('#playlistImportSubmit');
+  const neteaseId = extractNetEasePlaylistId(input.value);
+  const playlistId = extractPlaylistId(input.value);
+  const channelTarget = extractChannelTarget(input.value);
+  if (neteaseId) {
+    submit.disabled = true;
+    pendingNetEaseImport = null; renderNetEaseReview();
+    try { await importNetEasePlaylist(neteaseId); }
+    catch (error) { setImportStatus(error.message || 'The NetEase playlist could not be imported. Check the link and try again.', true); }
+    finally { submit.disabled = false; }
+    return;
+  }
+  if (!playlistId && !channelTarget) return setImportStatus('Paste a valid YouTube playlist, artist channel, or NetEase playlist link.', true);
+  submit.disabled = true;
+  setImportStatus(channelTarget ? 'Finding the artist’s uploads…' : 'Importing playlist…');
+  try {
+    let importId = playlistId;
+    let title = 'Imported playlist';
+    let importedFrom = playlistId;
+    if (channelTarget) {
+      const params = new URLSearchParams({ action: 'channel', maxResults: '1' });
+      params.set(channelTarget.type, channelTarget.value);
+      const channelData = await apiGet(`https://www.googleapis.com/youtube/v3/channels?${params.toString()}`);
+      const channel = channelData.items?.[0];
+      importId = channel?.contentDetails?.relatedPlaylists?.uploads || '';
+      if (!channel || !importId) throw new Error('That artist channel could not be found or has no public uploads.');
+      title = `${channel.snippet?.title || 'Artist'} — all songs`;
+      importedFrom = `channel:${channel.id}`;
+      const topSongs = await apiGet(`https://www.googleapis.com/youtube/v3/search?channelId=${encodeURIComponent(channel.id)}&order=viewCount&type=video&videoCategoryId=10&maxResults=25`);
+      const tracks = (topSongs.items || []).filter((item) => item.id?.videoId).map((item) => ({ kind: 'video', videoId: item.id.videoId, title: item.snippet?.title, artist: item.snippet?.channelTitle || channel.snippet?.title || 'YouTube', thumbnail: bestThumbnail(item.snippet?.thumbnails), tone: 'coral' }));
+      title = `${channel.snippet?.title || 'Artist'} — top songs`;
+      if (!tracks.length) throw new Error('No music videos were found for that artist channel.');
+      state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom, tracks });
+      saveState(); renderPlaylists(); renderLibrary(); input.value = ''; setImportStatus(`${tracks.length} top songs imported from “${title}”.`); showToast(`Imported “${title}”.`);
+      return;
+    }
+    const [metadata, firstPage] = await Promise.all([
+      apiGet(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id=${encodeURIComponent(importId)}&maxResults=1&mine=false`),
+      apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(importId)}&maxResults=50`)
+    ]);
+    const playlistInfo = metadata.items?.[0];
+    if (!playlistInfo && !channelTarget) throw new Error('That playlist could not be found or is not public.');
+    let items = firstPage.items || [];
+    let pageToken = firstPage.nextPageToken || '';
+    let pages = 1;
+    const maxImportPages = channelTarget ? 100 : 4;
+    while (pageToken && pages < maxImportPages) {
+      const page = await apiGet(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(importId)}&maxResults=50&pageToken=${encodeURIComponent(pageToken)}`);
+      items = items.concat(page.items || []);
+      pageToken = page.nextPageToken || '';
+      pages += 1;
+    }
+    const tracks = items.filter((item) => item.snippet?.resourceId?.videoId).map((item) => ({ kind: 'video', videoId: item.snippet.resourceId.videoId, title: item.snippet.title, artist: item.snippet.videoOwnerChannelTitle || 'YouTube', thumbnail: bestThumbnail(item.snippet.thumbnails), tone: 'coral' }));
+    if (!channelTarget) title = playlistInfo.snippet.title || title;
+    state.playlists.unshift({ id: `local-${Date.now()}`, title, local: true, importedFrom, tracks });
+    saveState(); renderPlaylists(); renderLibrary(); input.value = ''; setImportStatus(`${tracks.length} ${tracks.length === 1 ? 'song' : 'songs'} imported from “${title}”.`); showToast(`Imported “${title}”.`);
+  } catch (error) {
+    setImportStatus(error.message || 'The playlist could not be imported. Check the link and try again.', true);
+  } finally { submit.disabled = false; }
+}
+
+function openLocalPlaylist(id, title) {
+  if (!state.playlists.some((playlist) => playlist.id === id && playlist.local)) return;
+  activeLibraryPlaylistId = id;
+  setActiveView('library');
+  renderLibrary();
+}
+
+function playLocalPlaylist() {
+  const playlist = state.playlists.find((item) => item.id === activeLibraryPlaylistId && item.local);
+  const tracks = playlist?.tracks || [];
+  if (!tracks.length) return showToast('Add songs before playing this playlist.');
+  startPlaylistPlayback(tracks, 0);
+}
+
+function startPlaylistPlayback(tracks, index) {
+  if (!Array.isArray(tracks) || !tracks.length || !tracks[index]) return;
+  activePlaybackTracks = tracks.slice();
+  const remaining = tracks.filter((_, trackIndex) => trackIndex !== index);
+  state.queue = shuffleEnabled ? shuffleTracks(remaining) : remaining;
+  renderQueue();
+  playTrack(tracks[index], true);
+}
+
+function renderPlaylistPicker() {
+  const localPlaylists = state.playlists.filter((playlist) => playlist.local);
+  $('#playlistPickerList').innerHTML = localPlaylists.length ? localPlaylists.map((playlist) => `<button class="playlist-pick-item" data-pick-playlist="${escapeHtml(playlist.id)}"><span>${escapeHtml(playlist.title)}</span><small>${(playlist.tracks || []).length} tracks</small></button>`).join('') : '<p class="saved-empty">No personal playlists yet.</p>';
+}
+
+function openPlaylistPicker(track) {
+  if (!track) return;
+  pickerTrack = track;
+  $('#playlistPickerTrack').textContent = `Choose where to save “${track.title}”.`;
+  $('#newPlaylistName').value = '';
+  renderPlaylistPicker();
+  $('#playlistPicker').hidden = false;
+}
+
+function closePlaylistPicker() { $('#playlistPicker').hidden = true; pickerTrack = null; }
+
+function closeTrackMenu() { $('#trackMenu').hidden = true; menuTrack = null; menuPlaylistId = null; menuTrackIndex = null; }
+
+function openTrackMenu(track, trigger, playlistId = null, trackIndex = null) {
+  if (!track) return;
+  menuTrack = track;
+  menuPlaylistId = playlistId;
+  menuTrackIndex = trackIndex;
+  const menu = $('#trackMenu');
+  document.querySelectorAll('.menu-library-action').forEach((item) => { item.hidden = !playlistId; });
+  document.querySelectorAll('.menu-playlist-action').forEach((item) => { item.hidden = true; });
+  const bounds = trigger.getBoundingClientRect();
+  menu.hidden = false;
+  menu.style.top = `${Math.min(window.innerHeight - 112, bounds.bottom + 8)}px`;
+  menu.style.left = `${Math.max(12, Math.min(window.innerWidth - 190, bounds.right - 178))}px`;
+}
+
+function openPlaylistMenu(trigger) {
+  const playlist = getLocalPlaylist(activeLibraryPlaylistId); if (!playlist) return;
+  menuPlaylistId = playlist.id;
+  const menu = $('#trackMenu'); const bounds = trigger.getBoundingClientRect(); menu.hidden = false;
+  document.querySelectorAll('.menu-library-action').forEach((item) => { item.hidden = true; });
+  document.querySelectorAll('.menu-playlist-action').forEach((item) => { item.hidden = false; });
+  menu.style.top = `${Math.min(window.innerHeight - 270, bounds.bottom + 8)}px`;
+  menu.style.left = `${Math.max(12, Math.min(window.innerWidth - 210, bounds.right - 198))}px`;
+}
+
+function addToLocalPlaylist(id) {
+  const playlist = state.playlists.find((item) => item.id === id);
+  if (!playlist || !pickerTrack) return;
+  playlist.tracks = playlist.tracks || [];
+  if (!playlist.tracks.some((track) => trackKey(track) === trackKey(pickerTrack))) playlist.tracks.push(pickerTrack);
+  saveState(); renderPlaylists(); closePlaylistPicker(); showToast(`Added to “${playlist.title}”.`);
+}
+
+function renderLibrary() {
+  const localPlaylists = state.playlists.filter((playlist) => playlist.local);
+  const activePlaylist = localPlaylists.find((playlist) => playlist.id === activeLibraryPlaylistId);
+  $('#libraryPlaylists').hidden = Boolean(activePlaylist);
+  $('#libraryDetail').hidden = !activePlaylist;
+  if (activePlaylist) {
+    const tracks = activePlaylist.tracks || [];
+    $('#libraryPlayPlaylist').disabled = !tracks.length;
+    $('#libraryDetailTitle').textContent = activePlaylist.title;
+    $('#libraryDetailMeta').textContent = `${tracks.length} ${tracks.length === 1 ? 'song' : 'songs'}`;
+    $('#libraryTrackList').innerHTML = tracks.length ? tracks.map((track, index) => `<article class="library-track-row" data-library-track-index="${index}"><div class="library-track-thumb">${thumbnailMarkup(track)}</div><div class="library-track-copy"><strong>${escapeHtml(track.title)}</strong><small>${escapeHtml(track.artist || 'YouTube')}</small></div><button class="library-track-more" data-library-track-menu="${index}" aria-label="More options for ${escapeHtml(track.title)}">•••</button><button class="library-track-remove" data-remove-library-track="${index}" aria-label="Remove ${escapeHtml(track.title)} from ${escapeHtml(activePlaylist.title)}">×</button></article>`).join('') : '<div class="library-track-empty"><strong>This playlist is empty.</strong><p>Use Browse and the ••• menu to add songs here.</p></div>';
   } else {
   $('#libraryPlaylists').innerHTML = localPlaylists.length ? localPlaylists.map((playlist) => `<button class="library-playlist-card" data-library-playlist="${escapeHtml(playlist.id)}" data-playlist-title="${escapeHtml(playlist.title)}"><span class="library-playlist-art"><img src="fuecoco-playlist-cover.png" alt="" /></span><span class="library-playlist-copy"><strong>${escapeHtml(playlist.title)}</strong><small>${(playlist.tracks || []).length} ${(playlist.tracks || []).length === 1 ? 'song' : 'songs'}</small></span><span class="library-playlist-arrow">›</span></button>`).join('') : '<div class="library-empty"><span>＋</span><strong>Your library is empty.</strong><p>Create a playlist and start collecting songs.</p><button class="primary-button" id="createFirstPlaylist">Create playlist</button></div>';
   }
@@ -1265,6 +1451,5 @@ $('.primary-nav').addEventListener('click', (event) => {
   showView(button.dataset.view);
 });
 document.addEventListener('keydown', (event) => { if (event.target.matches('input, textarea, button')) return; if (event.code === 'Space') { event.preventDefault(); $('#playPause').click(); } if (event.code === 'ArrowRight') nextTrack(); if (event.code === 'ArrowLeft') previousTrack(); });
-
 
 
